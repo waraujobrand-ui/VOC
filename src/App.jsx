@@ -216,6 +216,9 @@ export default function App() {
       source_type: sourceType,
       source_file_name: sourceFileName,
       analysis_status: DEFAULT_ANALYSIS_STATUS,
+      analysis_traits: null,
+      estimated_parameters: null,
+      analysis_error: null,
       base_voice_id: null,
       parameters: null,
       created_at: now,
@@ -382,6 +385,9 @@ export default function App() {
                 <p>Source type: {voice.source_type}</p>
                 <p>Source file: {voice.source_file_name}</p>
                 <p>Analysis status: {voice.analysis_status}</p>
+                <p>Analysis traits: {voice.analysis_traits || 'null'}</p>
+                <p>Estimated parameters: {voice.estimated_parameters || 'null'}</p>
+                <p>Analysis error: {voice.analysis_error || 'null'}</p>
                 <p>Base voice ID: {voice.base_voice_id || 'null'}</p>
                 <p>Created at: {voice.created_at}</p>
                 <p>Updated at: {voice.updated_at}</p>
