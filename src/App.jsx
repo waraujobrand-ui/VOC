@@ -61,6 +61,12 @@ function createVocString(parameters) {
   ).join('|');
 }
 
+function createParametersSummary(parameters) {
+  return LOCKED_PARAMETERS.map(
+    (key) => `${key}: ${parameters[key] ?? DEFAULT_PARAMETERS[key]}`,
+  ).join(', ');
+}
+
 function loadSavedProfiles() {
   const storedProfiles = localStorage.getItem(STORAGE_KEY);
 
@@ -119,6 +125,7 @@ export default function App() {
   const [profileSortMode, setProfileSortMode] = useState('newest');
   const [voiceSearch, setVoiceSearch] = useState('');
   const [voiceSortMode, setVoiceSortMode] = useState('newest');
+  const [copiedProfileId, setCopiedProfileId] = useState(null);
 
   const filteredProfiles = sortByMode(
     savedProfiles.filter((profile) =>
@@ -307,12 +314,66 @@ export default function App() {
     setActiveView('profile_builder');
   }
 
+  async function copyProfileVocString(profile) {
+    const vocString = createVocString(profile.parameters);
+
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(vocString);
+    } else {
+      const copyField = document.createElement('textarea');
+      copyField.value = vocString;
+      copyField.setAttribute('readonly', '');
+      copyField.style.position = 'absolute';
+      copyField.style.left = '-9999px';
+      document.body.appendChild(copyField);
+      copyField.select();
+      document.execCommand('copy');
+      document.body.removeChild(copyField);
+    }
+
+    setCopiedProfileId(profile.id);
+    window.setTimeout(() => {
+      setCopiedProfileId((current) => (current === profile.id ? null : current));
+    }, 1800);
+  }
+
   return (
     <main className="voc-app">
       <header className="voc-header">
         <h1>VOC</h1>
         <p className="voc-tagline">Voice profile parameters — clean rebuild</p>
+        <div className="voc-badge-row">
+          <span className="voc-badge">Analysis unavailable</span>
+          <span className="voc-badge">Manual parameters only</span>
+          <span className="voc-badge">No audio generation connected</span>
+        </div>
       </header>
+
+      <section className="voc-card">
+        <h2>Status Dashboard</h2>
+        <div className="voc-status-grid">
+          <div className="voc-status-item">
+            <span>Saved profiles</span>
+            <strong>{savedProfiles.length}</strong>
+          </div>
+          <div className="voc-status-item">
+            <span>Saved voice sources</span>
+            <strong>{savedVoices.length}</strong>
+          </div>
+          <div className="voc-status-item">
+            <span>Selected audio file</span>
+            <strong>{audioFileName || 'None'}</strong>
+          </div>
+          <div className="voc-status-item">
+            <span>Selected video file</span>
+            <strong>{videoFileName || 'None'}</strong>
+          </div>
+          <div className="voc-status-item">
+            <span>Analysis engine status</span>
+            <strong>{DEFAULT_ANALYSIS_STATUS}</strong>
+          </div>
+        </div>
+      </section>
 
       <section className="voc-card">
         <h2>{activeView === 'profile_builder' ? 'Profile Builder' : 'Profile Schema'}</h2>
@@ -415,8 +476,12 @@ export default function App() {
             {filteredProfiles.map((profile) => (
               <li key={profile.id} className="voc-list-item">
                 <strong>{profile.name}</strong>
-                <p>{createVocString(profile.parameters)}</p>
-                <p>Source voice ID: {profile.source_voice_id || 'null'}</p>
+                <p>Source voice ID / source_voice_id: {profile.source_voice_id || 'null'}</p>
+                <p>Base voice ID / base_voice_id: {profile.base_voice_id || 'null'}</p>
+                <p>created_at: {profile.created_at}</p>
+                <p>updated_at: {profile.updated_at}</p>
+                <p>Derived VOC string: {createVocString(profile.parameters)}</p>
+                <p>Parameters summary: {createParametersSummary(profile.parameters)}</p>
                 <div className="voc-button-group">
                   <button
                     type="button"
@@ -446,7 +511,17 @@ export default function App() {
                   >
                     Edit
                   </button>
+                  <button
+                    type="button"
+                    className="voc-button"
+                    onClick={() => copyProfileVocString(profile)}
+                  >
+                    Copy VOC String
+                  </button>
                 </div>
+                {copiedProfileId === profile.id ? (
+                  <p className="voc-copy-confirmation">Copied VOC string.</p>
+                ) : null}
               </li>
             ))}
           </ul>

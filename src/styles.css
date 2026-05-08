@@ -42,6 +42,23 @@ body,
   color: var(--muted);
 }
 
+.voc-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.voc-badge {
+  background: #101419;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 12px;
+}
+
 .voc-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -84,10 +101,31 @@ body,
 }
 
 .voc-parameter-grid,
-.voc-controls {
+.voc-controls,
+.voc-status-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px 18px;
+}
+
+.voc-status-item {
+  background: #0f1318;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.voc-status-item span {
+  color: var(--muted);
+  display: block;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.voc-status-item strong {
+  color: var(--text);
+  display: block;
+  overflow-wrap: anywhere;
 }
 
 .voc-string {
@@ -159,4 +197,10 @@ body,
   color: var(--muted);
   margin: 18px 0 0;
   padding: 16px;
+}
+
+.voc-copy-confirmation {
+  color: var(--accent);
+  font-weight: 700;
+  margin-bottom: 0;
 }
