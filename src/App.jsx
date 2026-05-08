@@ -494,7 +494,7 @@ export default function App() {
         </div>
       </section>
 
-      <section className="voc-card">
+      <section className="voc-card voc-builder-card">
         <h2>{activeView === 'profile_builder' ? 'Profile Builder' : 'Profile Schema'}</h2>
         <p>Parameters are the locked source of truth for every VOC profile.</p>
 
@@ -540,16 +540,16 @@ export default function App() {
                             updateParameter(key, event.target.value)
                           }
                         />
-                        <span>{parameters[key]}</span>
-                      </>
-                    )}
-                  </label>
+                  <span className="voc-param-value">{parameters[key]}</span>
+                </>
+              )}
+            </label>
                 ))}
               </div>
             </div>
           ))}
 
-          <div className="voc-parameter-group">
+          <div className="voc-parameter-group voc-future-analysis-group">
             <h3>Future Analysis</h3>
             <p>
               Analysis traits and estimated parameters are reserved for a real
@@ -561,7 +561,7 @@ export default function App() {
         <p className="voc-string">{createVocString(parameters)}</p>
 
         <div className="voc-button-group">
-          <button type="button" className="voc-button" onClick={saveProfile}>
+          <button type="button" className="voc-button voc-button-primary" onClick={saveProfile}>
             Save Profile
           </button>
 
@@ -600,7 +600,7 @@ export default function App() {
           <div className="voc-export-panel">
             <button
               type="button"
-              className="voc-button"
+              className="voc-button voc-button-primary"
               onClick={exportSelectedProfile}
               disabled={!selectedExportProfile}
             >
@@ -642,52 +642,84 @@ export default function App() {
         </div>
 
         {savedProfiles.length === 0 ? (
-          <p className="voc-empty-state">No saved profiles yet.</p>
+          <div className="voc-empty-state">
+            <h3>No saved profiles yet</h3>
+            <p>Start by uploading a source or manually setting parameters, then save your first VOC profile.</p>
+          </div>
         ) : filteredProfiles.length === 0 ? (
-          <p className="voc-empty-state">No saved profiles match this search.</p>
+          <div className="voc-empty-state">
+            <h3>No profile matches</h3>
+            <p>Try a different profile name or clear the search field.</p>
+          </div>
         ) : (
           <ul className="voc-list">
             {filteredProfiles.map((profile) => (
-              <li key={profile.id} className="voc-list-item">
-                <strong>{profile.name}</strong>
-                <p>Source voice ID / source_voice_id: {profile.source_voice_id || 'null'}</p>
-                <p>Base voice ID / base_voice_id: {profile.base_voice_id || 'null'}</p>
-                <p>created_at: {profile.created_at}</p>
-                <p>updated_at: {profile.updated_at}</p>
-                <p>Derived VOC string: {createVocString(profile.parameters)}</p>
-                <p>Parameters summary: {createParametersSummary(profile.parameters)}</p>
+              <li key={profile.id} className="voc-list-item voc-profile-card">
+                <div className="voc-card-heading-row">
+                  <div>
+                    <h3 className="voc-profile-name">{profile.name}</h3>
+                    <p className="voc-card-subtitle">Saved VOC profile</p>
+                  </div>
+                  <span className="voc-accent-pill">
+                    {profile.parameters?.accent ?? DEFAULT_PARAMETERS.accent}
+                  </span>
+                </div>
+
+                <div className="voc-profile-meta-grid">
+                  <p><span>source_voice_id</span>{profile.source_voice_id || 'null'}</p>
+                  <p><span>base_voice_id</span>{profile.base_voice_id || 'null'}</p>
+                  <p><span>created_at</span>{profile.created_at}</p>
+                  <p><span>updated_at</span>{profile.updated_at}</p>
+                </div>
+
+                <div className="voc-profile-section">
+                  <span className="voc-section-label">Derived VOC string</span>
+                  <p className="voc-string voc-profile-voc-string">{createVocString(profile.parameters)}</p>
+                </div>
+
+                <div className="voc-profile-section">
+                  <span className="voc-section-label">Parameters summary</span>
+                  <div className="voc-param-summary">
+                    {LOCKED_PARAMETERS.map((key) => (
+                      <span key={key}>
+                        <strong>{key}</strong>
+                        {profile.parameters?.[key] ?? DEFAULT_PARAMETERS[key]}
+                      </span>
+                    ))}
+                  </div>
+                </div>
                 <div className="voc-button-group">
                   <button
                     type="button"
-                    className="voc-button"
+                    className="voc-button voc-button-primary"
                     onClick={() => loadProfile(profile)}
                   >
                     Load
                   </button>
                   <button
                     type="button"
-                    className="voc-button"
+                    className="voc-button voc-button-danger"
                     onClick={() => deleteProfile(profile.id)}
                   >
                     Delete
                   </button>
                   <button
                     type="button"
-                    className="voc-button"
+                    className="voc-button voc-button-secondary"
                     onClick={() => duplicateProfile(profile)}
                   >
                     Duplicate
                   </button>
                   <button
                     type="button"
-                    className="voc-button"
+                    className="voc-button voc-button-secondary"
                     onClick={() => editProfile(profile)}
                   >
                     Edit
                   </button>
                   <button
                     type="button"
-                    className="voc-button"
+                    className="voc-button voc-button-secondary"
                     onClick={() => copyProfileVocString(profile)}
                   >
                     Copy VOC String
@@ -721,7 +753,7 @@ export default function App() {
         <div className="voc-button-group">
           <button
             type="button"
-            className="voc-button"
+            className="voc-button voc-button-primary"
             onClick={saveVoiceSource}
             disabled={!videoFileName && !audioFileName}
           >
@@ -754,43 +786,57 @@ export default function App() {
         </div>
 
         {savedVoices.length === 0 ? (
-          <p className="voc-empty-state">No saved voice sources yet.</p>
+          <div className="voc-empty-state">
+            <h3>No saved voice sources yet</h3>
+            <p>Start by uploading a source. VOC stores the filename only until a real analysis engine is connected.</p>
+          </div>
         ) : filteredVoices.length === 0 ? (
-          <p className="voc-empty-state">
-            No saved voice sources match this search.
-          </p>
+          <div className="voc-empty-state">
+            <h3>No source matches</h3>
+            <p>Try searching by source name or filename.</p>
+          </div>
         ) : (
           <ul className="voc-list">
             {filteredVoices.map((voice) => (
-              <li key={voice.id} className="voc-list-item">
-                <strong>{voice.name}</strong>
-                <p>Source type: {voice.source_type}</p>
-                <p>Source file: {voice.source_file_name}</p>
-                <p>Analysis status: {voice.analysis_status}</p>
-                <p>Analysis traits: {voice.analysis_traits || 'null'}</p>
-                <p>Estimated parameters: {voice.estimated_parameters || 'null'}</p>
-                <p>Analysis error: {voice.analysis_error || 'null'}</p>
-                <p>Base voice ID: {voice.base_voice_id || 'null'}</p>
-                <p>Created at: {voice.created_at}</p>
-                <p>Updated at: {voice.updated_at}</p>
+              <li key={voice.id} className="voc-list-item voc-voice-card">
+                <div className="voc-card-heading-row">
+                  <div>
+                    <span className="voc-source-type-badge">{voice.source_type}</span>
+                    <h3 className="voc-source-file-name">{voice.source_file_name}</h3>
+                  </div>
+                  <span className="voc-status-pill">{voice.analysis_status}</span>
+                </div>
+
+                <div className="voc-profile-meta-grid">
+                  <p><span>name</span>{voice.name}</p>
+                  <p><span>base_voice_id</span>{voice.base_voice_id || 'null'}</p>
+                  <p><span>created_at</span>{voice.created_at}</p>
+                  <p><span>updated_at</span>{voice.updated_at}</p>
+                </div>
+
+                <div className="voc-analysis-grid">
+                  <p><span>analysis_traits</span>{voice.analysis_traits || 'null'}</p>
+                  <p><span>estimated_parameters</span>{voice.estimated_parameters || 'null'}</p>
+                  <p><span>analysis_error</span>{voice.analysis_error || 'null'}</p>
+                </div>
                 <div className="voc-button-group">
                   <button
                     type="button"
-                    className="voc-button"
+                    className="voc-button voc-button-primary"
                     onClick={() => loadVoiceSource(voice)}
                   >
                     Load Source
                   </button>
                   <button
                     type="button"
-                    className="voc-button"
+                    className="voc-button voc-button-danger"
                     onClick={() => deleteVoiceSource(voice.id)}
                   >
                     Delete Source
                   </button>
                   <button
                     type="button"
-                    className="voc-button"
+                    className="voc-button voc-button-secondary"
                     onClick={() => createProfileFromSource(voice)}
                   >
                     Create Profile
