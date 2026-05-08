@@ -37,6 +37,21 @@ const DEFAULT_PARAMETERS = {
   accent: 'neutral',
 };
 
+const PARAMETER_GROUPS = [
+  {
+    title: 'Voice Core',
+    keys: ['pitch', 'clarity', 'stability', 'warmth'],
+  },
+  {
+    title: 'Delivery',
+    keys: ['speed', 'cadence', 'emotion'],
+  },
+  {
+    title: 'Accent',
+    keys: ['accent'],
+  },
+];
+
 function sortByMode(items, sortMode) {
   const sortedItems = [...items];
 
@@ -65,6 +80,20 @@ function createParametersSummary(parameters) {
   return LOCKED_PARAMETERS.map(
     (key) => `${key}: ${parameters[key] ?? DEFAULT_PARAMETERS[key]}`,
   ).join(', ');
+}
+
+function isValidImportedProfile(profile) {
+  const requiredFields = ['id', 'name', 'parameters', 'created_at', 'updated_at'];
+
+  return (
+    profile &&
+    typeof profile === 'object' &&
+    requiredFields.every((field) =>
+      Object.prototype.hasOwnProperty.call(profile, field),
+    ) &&
+    typeof profile.parameters === 'object' &&
+    profile.parameters !== null
+  );
 }
 
 function loadSavedProfiles() {
@@ -126,6 +155,8 @@ export default function App() {
   const [voiceSearch, setVoiceSearch] = useState('');
   const [voiceSortMode, setVoiceSortMode] = useState('newest');
   const [copiedProfileId, setCopiedProfileId] = useState(null);
+  const [selectedExportProfileId, setSelectedExportProfileId] = useState('');
+  const [importStatus, setImportStatus] = useState('');
 
   const filteredProfiles = sortByMode(
     savedProfiles.filter((profile) =>
@@ -145,6 +176,10 @@ export default function App() {
     }),
     voiceSortMode,
   );
+
+  const selectedExportProfile =
+    savedProfiles.find((profile) => profile.id === selectedExportProfileId) ||
+    null;
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(savedProfiles));
@@ -337,17 +372,101 @@ export default function App() {
     }, 1800);
   }
 
+  function exportSelectedProfile() {
+    if (!selectedExportProfile) {
+      return;
+    }
+
+    const json = JSON.stringify(selectedExportProfile, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = `${selectedExportProfile.name || 'voc-profile'}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  function importProfileJson(event) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      try {
+        const importedProfile = JSON.parse(reader.result);
+
+        if (!isValidImportedProfile(importedProfile)) {
+          setImportStatus('Invalid profile JSON: missing required fields.');
+          return;
+        }
+
+        setSavedProfiles((current) => [importedProfile, ...current]);
+        setImportStatus(`Imported profile: ${importedProfile.name}`);
+      } catch {
+        setImportStatus('Invalid profile JSON: parse failed.');
+      }
+    };
+
+    reader.onerror = () => {
+      setImportStatus('Invalid profile JSON: file read failed.');
+    };
+
+    reader.readAsText(file);
+    event.target.value = '';
+  }
+
   return (
     <main className="voc-app">
       <header className="voc-header">
-        <h1>VOC</h1>
-        <p className="voc-tagline">Voice profile parameters — clean rebuild</p>
+        <div className="voc-brand">
+          <div className="voc-logo" aria-label="VOC logo">
+            VOC
+          </div>
+          <div>
+            <h1>VOC</h1>
+            <p className="voc-tagline">Voice Identity Profiling System</p>
+          </div>
+          <span className="voc-version">v0.1-alpha</span>
+        </div>
         <div className="voc-badge-row">
           <span className="voc-badge">Analysis unavailable</span>
           <span className="voc-badge">Manual parameters only</span>
           <span className="voc-badge">No audio generation connected</span>
         </div>
       </header>
+
+      <section className="voc-card voc-landing-panel">
+        <h2>Demo Overview</h2>
+        <p>
+          VOC stores saved voice sources, lets users manually control profile
+          parameters, persists profiles in localStorage, and keeps a future
+          analysis pipeline visible without pretending it is connected.
+        </p>
+        <ul className="voc-feature-list">
+          <li>Saved voice sources collect audio/video filenames only.</li>
+          <li>Manual parameter control remains the only profile input path.</li>
+          <li>Profile persistence is frontend-only through localStorage.</li>
+          <li>Future analysis fields are schema-safe placeholders.</li>
+          <li>Frontend truth policy: no fake analysis, detection, or generation.</li>
+        </ul>
+      </section>
+
+      <section className="voc-card voc-demo-panel">
+        <h2>Demo Mode</h2>
+        <div className="voc-badge-row">
+          <span className="voc-badge">Analysis engine not connected</span>
+          <span className="voc-badge">Audio generation not connected</span>
+          <span className="voc-badge">Manual parameter workflow active</span>
+        </div>
+      </section>
 
       <section className="voc-card">
         <h2>Status Dashboard</h2>
@@ -389,37 +508,54 @@ export default function App() {
           />
         </label>
 
-        <div className="voc-parameter-grid">
-          {LOCKED_PARAMETERS.map((key) => (
-            <label key={key} className="voc-field">
-              <span>{key}</span>
-              {key === 'accent' ? (
-                <select
-                  value={parameters.accent}
-                  onChange={(event) => updateParameter(key, event.target.value)}
-                >
-                  {ACCENT_OPTIONS.map((accent) => (
-                    <option key={accent} value={accent}>
-                      {accent}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={parameters[key]}
-                    onChange={(event) =>
-                      updateParameter(key, event.target.value)
-                    }
-                  />
-                  <span>{parameters[key]}</span>
-                </>
-              )}
-            </label>
+        <div className="voc-parameter-groups">
+          {PARAMETER_GROUPS.map((group) => (
+            <div key={group.title} className="voc-parameter-group">
+              <h3>{group.title}</h3>
+              <div className="voc-parameter-grid">
+                {group.keys.map((key) => (
+                  <label key={key} className="voc-field">
+                    <span>{key}</span>
+                    {key === 'accent' ? (
+                      <select
+                        value={parameters.accent}
+                        onChange={(event) =>
+                          updateParameter(key, event.target.value)
+                        }
+                      >
+                        {ACCENT_OPTIONS.map((accent) => (
+                          <option key={accent} value={accent}>
+                            {accent}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <>
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={parameters[key]}
+                          onChange={(event) =>
+                            updateParameter(key, event.target.value)
+                          }
+                        />
+                        <span>{parameters[key]}</span>
+                      </>
+                    )}
+                  </label>
+                ))}
+              </div>
+            </div>
           ))}
+
+          <div className="voc-parameter-group">
+            <h3>Future Analysis</h3>
+            <p>
+              Analysis traits and estimated parameters are reserved for a real
+              analyzer. This demo does not infer values from uploads.
+            </p>
+          </div>
         </div>
 
         <p className="voc-string">{createVocString(parameters)}</p>
@@ -443,6 +579,44 @@ export default function App() {
 
       <section className="voc-card">
         <h2>Saved Profiles</h2>
+        <div className="voc-controls">
+          <label className="voc-field">
+            Export profile JSON
+            <select
+              value={selectedExportProfileId}
+              onChange={(event) =>
+                setSelectedExportProfileId(event.target.value)
+              }
+            >
+              <option value="">Select a saved profile</option>
+              {savedProfiles.map((profile) => (
+                <option key={profile.id} value={profile.id}>
+                  {profile.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="voc-export-panel">
+            <button
+              type="button"
+              className="voc-button"
+              onClick={exportSelectedProfile}
+              disabled={!selectedExportProfile}
+            >
+              Export Profile JSON
+            </button>
+          </div>
+        </div>
+
+        <label className="voc-field">
+          Import Profile JSON
+          <input type="file" accept=".json,application/json" onChange={importProfileJson} />
+        </label>
+        {importStatus ? (
+          <p className="voc-copy-confirmation">{importStatus}</p>
+        ) : null}
+
         <div className="voc-controls">
           <label className="voc-field">
             Search profiles

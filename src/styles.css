@@ -37,6 +37,36 @@ body,
   letter-spacing: -0.02em;
 }
 
+.voc-brand {
+  align-items: center;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: auto 1fr auto;
+}
+
+.voc-logo {
+  align-items: center;
+  background: linear-gradient(135deg, var(--accent), #8ce6cf);
+  border-radius: 16px;
+  color: #06120e;
+  display: flex;
+  font-weight: 900;
+  height: 56px;
+  justify-content: center;
+  letter-spacing: -0.08em;
+  width: 56px;
+}
+
+.voc-version {
+  background: #101419;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 12px;
+}
+
 .voc-tagline {
   margin: 4px 0 0;
   color: var(--muted);
@@ -72,9 +102,29 @@ body,
   font-size: 18px;
 }
 
+.voc-card h3 {
+  font-size: 15px;
+  margin: 0 0 4px;
+}
+
 .voc-card p {
   color: var(--muted);
   line-height: 1.5;
+}
+
+.voc-landing-panel,
+.voc-demo-panel {
+  background:
+    radial-gradient(circle at top left, rgba(76, 194, 163, 0.15), transparent 32%),
+    var(--surface);
+}
+
+.voc-feature-list {
+  color: var(--muted);
+  display: grid;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding-left: 20px;
 }
 
 .voc-field {
@@ -106,6 +156,24 @@ body,
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px 18px;
+}
+
+.voc-parameter-groups {
+  display: grid;
+  gap: 16px;
+}
+
+.voc-parameter-group {
+  background: #0f1318;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.voc-export-panel {
+  align-items: end;
+  display: flex;
+  padding-bottom: 16px;
 }
 
 .voc-status-item {
@@ -203,4 +271,15 @@ body,
   color: var(--accent);
   font-weight: 700;
   margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .voc-brand {
+    grid-template-columns: auto 1fr;
+  }
+
+  .voc-version {
+    grid-column: 1 / -1;
+    width: fit-content;
+  }
 }
