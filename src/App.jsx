@@ -443,6 +443,11 @@ export default function App() {
         </div>
       </header>
 
+      <section className="voc-card voc-investor-hero">
+        <span className="voc-section-label">Investor demo framing</span>
+        <h2>VOC turns voice identity into reusable, adjustable parameters.</h2>
+      </section>
+
       <section className="voc-card voc-landing-panel">
         <h2>Demo Overview</h2>
         <p>
@@ -459,12 +464,64 @@ export default function App() {
         </ul>
       </section>
 
+      <section className="voc-card voc-investor-panel">
+        <h2>Why It Matters</h2>
+        <div className="voc-explainer-grid">
+          <div>
+            <h3>Voice apps use vague presets</h3>
+            <p>Most workflows describe voices with loose labels that are hard to reuse or tune precisely.</p>
+          </div>
+          <div>
+            <h3>VOC uses structured parameters</h3>
+            <p>Profiles organize voice identity into clear controls like pitch, cadence, clarity, warmth, and accent.</p>
+          </div>
+          <div>
+            <h3>Saved profiles make voices reusable</h3>
+            <p>A VOC profile can be loaded, duplicated, edited, exported, and imported without changing its schema.</p>
+          </div>
+          <div>
+            <h3>Future analysis can estimate parameters</h3>
+            <p>Uploaded audio or video can later feed a real analyzer that estimates profile parameters from measurable traits.</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="voc-card voc-investor-panel">
+        <h2>Demo Walkthrough</h2>
+        <ol className="voc-walkthrough-list">
+          <li><span>1</span>Upload or save a voice source</li>
+          <li><span>2</span>Adjust profile parameters manually</li>
+          <li><span>3</span>Save reusable VOC profile</li>
+          <li><span>4</span>Export/import profile JSON</li>
+        </ol>
+      </section>
+
       <section className="voc-card voc-demo-panel">
         <h2>Demo Mode</h2>
         <div className="voc-badge-row">
           <span className="voc-badge">Analysis engine not connected</span>
           <span className="voc-badge">Audio generation not connected</span>
           <span className="voc-badge">Manual parameter workflow active</span>
+        </div>
+      </section>
+
+      <section className="voc-card voc-limits-panel">
+        <h2>Current Limits</h2>
+        <div className="voc-badge-row">
+          <span className="voc-badge">Analysis engine not connected</span>
+          <span className="voc-badge">Audio generation not connected</span>
+          <span className="voc-badge">Manual workflow only</span>
+          <span className="voc-badge">No fake detection</span>
+        </div>
+      </section>
+
+      <section className="voc-card voc-future-engine-panel">
+        <h2>Future Engine Pipeline</h2>
+        <div className="voc-pipeline">
+          <span>audio/video source</span>
+          <span>analysis traits</span>
+          <span>estimated parameters</span>
+          <span>reusable VOC profile</span>
         </div>
       </section>
 
