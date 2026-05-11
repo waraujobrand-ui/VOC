@@ -131,6 +131,7 @@ body,
 .voc-demo-panel,
 .voc-investor-hero,
 .voc-investor-panel,
+.voc-identity-panel,
 .voc-limits-panel,
 .voc-future-engine-panel {
   background:
@@ -210,6 +211,62 @@ body,
   gap: 14px;
   grid-template-columns: repeat(4, 1fr);
   margin-top: 20px;
+}
+
+.voc-character-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin-top: 18px;
+}
+
+.voc-character-grid span {
+  background: rgba(76, 194, 163, 0.12);
+  border: 1px solid rgba(76, 194, 163, 0.28);
+  border-radius: 14px;
+  color: var(--text);
+  font-weight: 800;
+  padding: 16px;
+  text-align: center;
+}
+
+.voc-identity-statement {
+  background: rgba(11, 13, 16, 0.48);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  color: var(--accent);
+  font-weight: 900;
+  margin: 18px 0 0;
+  padding: 16px;
+  text-align: center;
+}
+
+.voc-architecture-pipeline {
+  display: grid;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.voc-architecture-pipeline span {
+  background: rgba(11, 13, 16, 0.54);
+  border: 1px solid rgba(76, 194, 163, 0.24);
+  border-radius: 14px;
+  color: var(--text);
+  font-weight: 800;
+  padding: 15px;
+  position: relative;
+  text-align: center;
+}
+
+.voc-architecture-pipeline span:not(:last-child)::after {
+  bottom: -23px;
+  color: var(--accent);
+  content: "↓";
+  font-size: 22px;
+  left: 50%;
+  position: absolute;
+  transform: translateX(-50%);
+  z-index: 1;
 }
 
 .voc-pipeline span {

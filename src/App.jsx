@@ -446,22 +446,74 @@ export default function App() {
       <section className="voc-card voc-investor-hero">
         <span className="voc-section-label">Investor demo framing</span>
         <h2>VOC turns voice identity into reusable, adjustable parameters.</h2>
+        <p>
+          Persistent Voice Identity Infrastructure for reusable character voice
+          systems and identity-consistent variation.
+        </p>
       </section>
 
       <section className="voc-card voc-landing-panel">
         <h2>Demo Overview</h2>
         <p>
-          VOC stores saved voice sources, lets users manually control profile
-          parameters, persists profiles in localStorage, and keeps a future
-          analysis pipeline visible without pretending it is connected.
+          VOC stores persistent source voices, lets users manually layer
+          expression through structured parameters, persists reusable voice
+          profiles in localStorage, and keeps a future analysis pipeline visible
+          without pretending it is connected.
         </p>
         <ul className="voc-feature-list">
           <li>Saved voice sources collect audio/video filenames only.</li>
           <li>Manual parameter control remains the only profile input path.</li>
-          <li>Profile persistence is frontend-only through localStorage.</li>
+          <li>Profile persistence is frontend-only and non-destructive.</li>
           <li>Future analysis fields are schema-safe placeholders.</li>
           <li>Frontend truth policy: no fake analysis, detection, or generation.</li>
         </ul>
+      </section>
+
+      <section className="voc-card voc-identity-panel">
+        <h2>Identity Lock</h2>
+        <div className="voc-explainer-grid">
+          <div>
+            <h3>Base voice identity is protected</h3>
+            <p>The persistent source voice stays intact while profiles reference it as reusable identity infrastructure.</p>
+          </div>
+          <div>
+            <h3>Expression layers do the modification</h3>
+            <p>Emotion, delivery, and style layers adjust presentation without replacing the underlying identity.</p>
+          </div>
+          <div>
+            <h3>Profiles stay reusable and consistent</h3>
+            <p>Saved profiles preserve structured settings so the same voice identity can return across sessions.</p>
+          </div>
+          <div>
+            <h3>Non-destructive by design</h3>
+            <p>VOC layers identity-consistent variation instead of permanently transforming or overwriting a voice.</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="voc-card voc-identity-panel">
+        <h2>Voice Ownership Integrity</h2>
+        <ul className="voc-feature-list">
+          <li>Original uploaded or recorded voices are never modified automatically.</li>
+          <li>VOC never deletes or overwrites source identity.</li>
+          <li>Only explicit user actions can replace or remove a source.</li>
+          <li>Saved voice sources remain persistent assets.</li>
+        </ul>
+      </section>
+
+      <section className="voc-card voc-identity-panel">
+        <h2>Identity Consistency</h2>
+        <p>
+          A character voice can carry different expression layers while
+          remaining the same core identity.
+        </p>
+        <div className="voc-character-grid">
+          <span>Chris - Neutral</span>
+          <span>Chris - Angry</span>
+          <span>Chris - Crying</span>
+          <span>Chris - Whispering</span>
+        </div>
+        <p className="voc-identity-statement">All remain: "the same core identity"</p>
       </section>
 
       <section className="voc-card voc-investor-panel">
@@ -522,6 +574,44 @@ export default function App() {
           <span>analysis traits</span>
           <span>estimated parameters</span>
           <span>reusable VOC profile</span>
+        </div>
+      </section>
+
+      <section className="voc-card voc-future-engine-panel">
+        <h2>Future System Architecture</h2>
+        <div className="voc-architecture-pipeline">
+          <span>Base Identity</span>
+          <span>Identity Lock</span>
+          <span>Emotion Layer</span>
+          <span>Delivery Layer</span>
+          <span>Style Layer</span>
+          <span>Output Voice</span>
+        </div>
+      </section>
+
+      <section className="voc-card voc-investor-panel">
+        <h2>Dev / Investor Clarity</h2>
+        <div className="voc-explainer-grid">
+          <div>
+            <h3>Structured parameter architecture</h3>
+            <p>Voice identity is represented through inspectable controls rather than vague presets.</p>
+          </div>
+          <div>
+            <h3>Reusable deterministic profiles</h3>
+            <p>Profiles can be saved, loaded, duplicated, exported, and imported with stable schema fields.</p>
+          </div>
+          <div>
+            <h3>Identity-preserving overlays</h3>
+            <p>Expression changes are modeled as layers on top of a protected base identity.</p>
+          </div>
+          <div>
+            <h3>Future analysis-assisted estimation</h3>
+            <p>Real audio traits can later assist parameter estimation without fake detection in the current demo.</p>
+          </div>
+          <div>
+            <h3>Non-destructive profile persistence</h3>
+            <p>Saved sources and profiles remain persistent assets until the user explicitly removes them.</p>
+          </div>
         </div>
       </section>
 
