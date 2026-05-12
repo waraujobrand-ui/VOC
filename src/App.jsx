@@ -1,25 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
-import {
-  STORAGE_KEY,
-  SAVED_VOICES_STORAGE_KEY,
-  DEFAULT_PARAMETERS,
-  SORT_MODES,
-  VIEWS,
-} from './constants.js';
-import {
-  createVocString,
-  createProfile,
-  createSavedVoice,
-  validateProfile,
-} from './schema.js';
-import { safeLoadArray, saveArray } from './storage.js';
-import {
-  sortByMode,
-  filterProfilesBySearch,
-  filterVoicesBySearch,
-  duplicateProfile as duplicateProfileObject,
-} from './profileUtils.js';
+import { VIEWS } from './constants.js';
+import { createProfile } from './schema.js';
 import AppHeader from './components/AppHeader.jsx';
 import InvestorHero from './components/InvestorHero.jsx';
 import DemoOverviewPanel from './components/DemoOverviewPanel.jsx';
@@ -37,57 +19,78 @@ import StatusDashboard from './components/StatusDashboard.jsx';
 import ProfileBuilder from './components/ProfileBuilder.jsx';
 import SavedProfilesPanel from './components/SavedProfilesPanel.jsx';
 import VoiceSourceLibrary from './components/VoiceSourceLibrary.jsx';
+import { useProfileBuilderState } from './hooks/useProfileBuilderState.js';
+import { useProfilesStore } from './hooks/useProfilesStore.js';
+import { useVoicesStore } from './hooks/useVoicesStore.js';
+import { useVoiceUploads } from './hooks/useVoiceUploads.js';
+import {
+  useProfileSearchSort,
+  useVoiceSearchSort,
+} from './hooks/useSearchSort.js';
+import { useProfileImportExport } from './hooks/useProfileImportExport.js';
 
 export default function App() {
-  const [parameters, setParameters] = useState(DEFAULT_PARAMETERS);
-  const [savedProfiles, setSavedProfiles] = useState(() =>
-    safeLoadArray(STORAGE_KEY),
-  );
-  const [savedVoices, setSavedVoices] = useState(() =>
-    safeLoadArray(SAVED_VOICES_STORAGE_KEY),
-  );
-  const [profileName, setProfileName] = useState('');
-  const [audioFileName, setAudioFileName] = useState('');
-  const [videoFileName, setVideoFileName] = useState('');
   const [activeView, setActiveView] = useState(VIEWS.PROFILE_BUILDER);
-  const [selectedVoiceSourceId, setSelectedVoiceSourceId] = useState(null);
-  const [editingProfileId, setEditingProfileId] = useState(null);
-  const [profileSearch, setProfileSearch] = useState('');
-  const [profileSortMode, setProfileSortMode] = useState(SORT_MODES.NEWEST);
-  const [voiceSearch, setVoiceSearch] = useState('');
-  const [voiceSortMode, setVoiceSortMode] = useState(SORT_MODES.NEWEST);
-  const [copiedProfileId, setCopiedProfileId] = useState(null);
-  const [selectedExportProfileId, setSelectedExportProfileId] = useState('');
-  const [importStatus, setImportStatus] = useState('');
 
-  const filteredProfiles = sortByMode(
-    filterProfilesBySearch(savedProfiles, profileSearch),
+  const {
+    parameters,
+    profileName,
+    setProfileName,
+    selectedVoiceSourceId,
+    setSelectedVoiceSourceId,
+    editingProfileId,
+    setEditingProfileId,
+    updateParameter,
+    applyProfileToBuilder,
+  } = useProfileBuilderState();
+
+  const {
+    savedProfiles,
+    setSavedProfiles,
+    deleteProfile,
+    duplicateProfile,
+    copiedProfileId,
+    copyProfileVocString,
+  } = useProfilesStore();
+
+  const {
+    savedVoices,
+    saveVoiceSource: persistVoiceSource,
+    deleteVoiceSource,
+  } = useVoicesStore();
+
+  const {
+    audioFileName,
+    videoFileName,
+    handleAudioUpload,
+    handleVideoUpload,
+    loadVoiceSource,
+  } = useVoiceUploads();
+
+  const {
+    profileSearch,
+    setProfileSearch,
     profileSortMode,
-  );
+    setProfileSortMode,
+    filteredProfiles,
+  } = useProfileSearchSort(savedProfiles);
 
-  const filteredVoices = sortByMode(
-    filterVoicesBySearch(savedVoices, voiceSearch),
+  const {
+    voiceSearch,
+    setVoiceSearch,
     voiceSortMode,
-  );
+    setVoiceSortMode,
+    filteredVoices,
+  } = useVoiceSearchSort(savedVoices);
 
-  const selectedExportProfile =
-    savedProfiles.find((profile) => profile.id === selectedExportProfileId) ||
-    null;
-
-  useEffect(() => {
-    saveArray(STORAGE_KEY, savedProfiles);
-  }, [savedProfiles]);
-
-  useEffect(() => {
-    saveArray(SAVED_VOICES_STORAGE_KEY, savedVoices);
-  }, [savedVoices]);
-
-  function updateParameter(key, value) {
-    setParameters((current) => ({
-      ...current,
-      [key]: key === 'accent' ? value : Number(value),
-    }));
-  }
+  const {
+    selectedExportProfileId,
+    setSelectedExportProfileId,
+    selectedExportProfile,
+    exportSelectedProfile,
+    importStatus,
+    importProfileJson,
+  } = useProfileImportExport({ savedProfiles, setSavedProfiles });
 
   function saveProfile() {
     const now = new Date().toISOString();
@@ -130,23 +133,11 @@ export default function App() {
   }
 
   function loadProfile(profile) {
-    setParameters({ ...DEFAULT_PARAMETERS, ...profile.parameters });
-    setProfileName(profile.name);
-  }
-
-  function deleteProfile(profileId) {
-    setSavedProfiles((current) =>
-      current.filter((profile) => profile.id !== profileId),
-    );
-  }
-
-  function duplicateProfile(profile) {
-    setSavedProfiles((current) => [duplicateProfileObject(profile), ...current]);
+    applyProfileToBuilder(profile);
   }
 
   function editProfile(profile) {
-    setParameters({ ...DEFAULT_PARAMETERS, ...profile.parameters });
-    setProfileName(profile.name);
+    applyProfileToBuilder(profile);
     setSelectedVoiceSourceId(profile.source_voice_id || null);
     setEditingProfileId(profile.id);
     setActiveView(VIEWS.PROFILE_BUILDER);
@@ -158,51 +149,8 @@ export default function App() {
     setProfileName(`VOC Profile ${savedProfiles.length + 1}`);
   }
 
-  function handleAudioUpload(event) {
-    const fileName = event.target.files?.[0]?.name || '';
-    setAudioFileName(fileName);
-
-    if (fileName) {
-      setVideoFileName('');
-    }
-  }
-
-  function handleVideoUpload(event) {
-    const fileName = event.target.files?.[0]?.name || '';
-    setVideoFileName(fileName);
-
-    if (fileName) {
-      setAudioFileName('');
-    }
-  }
-
   function saveVoiceSource() {
-    const sourceFileName = videoFileName || audioFileName;
-
-    if (!sourceFileName) {
-      return;
-    }
-
-    const sourceType = videoFileName ? 'video' : 'audio';
-    const savedVoice = createSavedVoice({ sourceFileName, sourceType });
-
-    setSavedVoices((current) => [savedVoice, ...current]);
-  }
-
-  function loadVoiceSource(voice) {
-    if (voice.source_type === 'audio') {
-      setAudioFileName(voice.source_file_name);
-      setVideoFileName('');
-    }
-
-    if (voice.source_type === 'video') {
-      setVideoFileName(voice.source_file_name);
-      setAudioFileName('');
-    }
-  }
-
-  function deleteVoiceSource(voiceId) {
-    setSavedVoices((current) => current.filter((voice) => voice.id !== voiceId));
+    persistVoiceSource({ audioFileName, videoFileName });
   }
 
   function createProfileFromSource(voice) {
@@ -210,80 +158,6 @@ export default function App() {
     setSelectedVoiceSourceId(voice.id);
     setProfileName(`${voice.name} Profile`);
     setActiveView(VIEWS.PROFILE_BUILDER);
-  }
-
-  async function copyProfileVocString(profile) {
-    const vocString = createVocString(profile.parameters);
-
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(vocString);
-    } else {
-      const copyField = document.createElement('textarea');
-      copyField.value = vocString;
-      copyField.setAttribute('readonly', '');
-      copyField.style.position = 'absolute';
-      copyField.style.left = '-9999px';
-      document.body.appendChild(copyField);
-      copyField.select();
-      document.execCommand('copy');
-      document.body.removeChild(copyField);
-    }
-
-    setCopiedProfileId(profile.id);
-    window.setTimeout(() => {
-      setCopiedProfileId((current) => (current === profile.id ? null : current));
-    }, 1800);
-  }
-
-  function exportSelectedProfile() {
-    if (!selectedExportProfile) {
-      return;
-    }
-
-    const json = JSON.stringify(selectedExportProfile, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-
-    link.href = url;
-    link.download = `${selectedExportProfile.name || 'voc-profile'}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }
-
-  function importProfileJson(event) {
-    const file = event.target.files?.[0];
-
-    if (!file) {
-      return;
-    }
-
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      try {
-        const importedProfile = JSON.parse(reader.result);
-
-        if (!validateProfile(importedProfile)) {
-          setImportStatus('Invalid profile JSON: missing required fields.');
-          return;
-        }
-
-        setSavedProfiles((current) => [importedProfile, ...current]);
-        setImportStatus(`Imported profile: ${importedProfile.name}`);
-      } catch {
-        setImportStatus('Invalid profile JSON: parse failed.');
-      }
-    };
-
-    reader.onerror = () => {
-      setImportStatus('Invalid profile JSON: file read failed.');
-    };
-
-    reader.readAsText(file);
-    event.target.value = '';
   }
 
   return (
