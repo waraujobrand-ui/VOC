@@ -1,179 +1,59 @@
 import { useEffect, useState } from 'react';
 
-const STORAGE_KEY = 'voc_profiles';
-const SAVED_VOICES_STORAGE_KEY = 'voc_saved_voices';
-const DEFAULT_ANALYSIS_STATUS = 'unavailable';
-
-const LOCKED_PARAMETERS = [
-  'pitch',
-  'speed',
-  'cadence',
-  'clarity',
-  'stability',
-  'emotion',
-  'warmth',
-  'accent',
-];
-
-const ACCENT_OPTIONS = [
-  'neutral',
-  'american_general',
-  'american_southern',
-  'british_general',
-  'irish_general',
-  'australian_general',
-  'spanish_influenced',
-  'caribbean_influenced',
-];
-
-const DEFAULT_PARAMETERS = {
-  pitch: 50,
-  speed: 50,
-  cadence: 50,
-  clarity: 50,
-  stability: 50,
-  emotion: 50,
-  warmth: 50,
-  accent: 'neutral',
-};
-
-const PARAMETER_GROUPS = [
-  {
-    title: 'Voice Core',
-    keys: ['pitch', 'clarity', 'stability', 'warmth'],
-  },
-  {
-    title: 'Delivery',
-    keys: ['speed', 'cadence', 'emotion'],
-  },
-  {
-    title: 'Accent',
-    keys: ['accent'],
-  },
-];
-
-function sortByMode(items, sortMode) {
-  const sortedItems = [...items];
-
-  if (sortMode === 'oldest') {
-    return sortedItems.sort(
-      (a, b) => new Date(a.created_at) - new Date(b.created_at),
-    );
-  }
-
-  if (sortMode === 'alphabetical') {
-    return sortedItems.sort((a, b) => a.name.localeCompare(b.name));
-  }
-
-  return sortedItems.sort(
-    (a, b) => new Date(b.created_at) - new Date(a.created_at),
-  );
-}
-
-function createVocString(parameters) {
-  return LOCKED_PARAMETERS.map(
-    (key) => `${key}:${parameters[key] ?? DEFAULT_PARAMETERS[key]}`,
-  ).join('|');
-}
-
-function createParametersSummary(parameters) {
-  return LOCKED_PARAMETERS.map(
-    (key) => `${key}: ${parameters[key] ?? DEFAULT_PARAMETERS[key]}`,
-  ).join(', ');
-}
-
-function isValidImportedProfile(profile) {
-  const requiredFields = ['id', 'name', 'parameters', 'created_at', 'updated_at'];
-
-  return (
-    profile &&
-    typeof profile === 'object' &&
-    requiredFields.every((field) =>
-      Object.prototype.hasOwnProperty.call(profile, field),
-    ) &&
-    typeof profile.parameters === 'object' &&
-    profile.parameters !== null
-  );
-}
-
-function loadSavedProfiles() {
-  const storedProfiles = localStorage.getItem(STORAGE_KEY);
-
-  if (!storedProfiles) {
-    return [];
-  }
-
-  try {
-    const parsedProfiles = JSON.parse(storedProfiles);
-
-    if (!Array.isArray(parsedProfiles)) {
-      localStorage.removeItem(STORAGE_KEY);
-      return [];
-    }
-
-    return parsedProfiles;
-  } catch {
-    localStorage.removeItem(STORAGE_KEY);
-    return [];
-  }
-}
-
-function loadSavedVoices() {
-  const storedVoices = localStorage.getItem(SAVED_VOICES_STORAGE_KEY);
-
-  if (!storedVoices) {
-    return [];
-  }
-
-  try {
-    const parsedVoices = JSON.parse(storedVoices);
-
-    if (!Array.isArray(parsedVoices)) {
-      localStorage.removeItem(SAVED_VOICES_STORAGE_KEY);
-      return [];
-    }
-
-    return parsedVoices;
-  } catch {
-    localStorage.removeItem(SAVED_VOICES_STORAGE_KEY);
-    return [];
-  }
-}
+import {
+  STORAGE_KEY,
+  SAVED_VOICES_STORAGE_KEY,
+  DEFAULT_ANALYSIS_STATUS,
+  LOCKED_PARAMETERS,
+  ACCENT_OPTIONS,
+  DEFAULT_PARAMETERS,
+  PARAMETER_GROUPS,
+  SORT_MODES,
+  VIEWS,
+} from './constants.js';
+import {
+  createVocString,
+  createProfile,
+  createSavedVoice,
+  validateProfile,
+} from './schema.js';
+import { safeLoadArray, saveArray } from './storage.js';
+import {
+  sortByMode,
+  filterProfilesBySearch,
+  filterVoicesBySearch,
+  duplicateProfile as duplicateProfileObject,
+} from './profileUtils.js';
 
 export default function App() {
   const [parameters, setParameters] = useState(DEFAULT_PARAMETERS);
-  const [savedProfiles, setSavedProfiles] = useState(loadSavedProfiles);
-  const [savedVoices, setSavedVoices] = useState(loadSavedVoices);
+  const [savedProfiles, setSavedProfiles] = useState(() =>
+    safeLoadArray(STORAGE_KEY),
+  );
+  const [savedVoices, setSavedVoices] = useState(() =>
+    safeLoadArray(SAVED_VOICES_STORAGE_KEY),
+  );
   const [profileName, setProfileName] = useState('');
   const [audioFileName, setAudioFileName] = useState('');
   const [videoFileName, setVideoFileName] = useState('');
-  const [activeView, setActiveView] = useState('profile_builder');
+  const [activeView, setActiveView] = useState(VIEWS.PROFILE_BUILDER);
   const [selectedVoiceSourceId, setSelectedVoiceSourceId] = useState(null);
   const [editingProfileId, setEditingProfileId] = useState(null);
   const [profileSearch, setProfileSearch] = useState('');
-  const [profileSortMode, setProfileSortMode] = useState('newest');
+  const [profileSortMode, setProfileSortMode] = useState(SORT_MODES.NEWEST);
   const [voiceSearch, setVoiceSearch] = useState('');
-  const [voiceSortMode, setVoiceSortMode] = useState('newest');
+  const [voiceSortMode, setVoiceSortMode] = useState(SORT_MODES.NEWEST);
   const [copiedProfileId, setCopiedProfileId] = useState(null);
   const [selectedExportProfileId, setSelectedExportProfileId] = useState('');
   const [importStatus, setImportStatus] = useState('');
 
   const filteredProfiles = sortByMode(
-    savedProfiles.filter((profile) =>
-      profile.name.toLowerCase().includes(profileSearch.toLowerCase()),
-    ),
+    filterProfilesBySearch(savedProfiles, profileSearch),
     profileSortMode,
   );
 
   const filteredVoices = sortByMode(
-    savedVoices.filter((voice) => {
-      const searchValue = voiceSearch.toLowerCase();
-
-      return (
-        voice.name.toLowerCase().includes(searchValue) ||
-        voice.source_file_name.toLowerCase().includes(searchValue)
-      );
-    }),
+    filterVoicesBySearch(savedVoices, voiceSearch),
     voiceSortMode,
   );
 
@@ -182,11 +62,11 @@ export default function App() {
     null;
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(savedProfiles));
+    saveArray(STORAGE_KEY, savedProfiles);
   }, [savedProfiles]);
 
   useEffect(() => {
-    localStorage.setItem(SAVED_VOICES_STORAGE_KEY, JSON.stringify(savedVoices));
+    saveArray(SAVED_VOICES_STORAGE_KEY, savedVoices);
   }, [savedVoices]);
 
   function updateParameter(key, value) {
@@ -198,7 +78,6 @@ export default function App() {
 
   function saveProfile() {
     const now = new Date().toISOString();
-    const trimmedName = profileName.trim();
 
     if (editingProfileId) {
       setSavedProfiles((current) =>
@@ -224,15 +103,13 @@ export default function App() {
       return;
     }
 
-    const profile = {
-      id: crypto.randomUUID(),
-      name: trimmedName || `VOC Profile ${savedProfiles.length + 1}`,
-      base_voice_id: null,
-      source_voice_id: selectedVoiceSourceId,
-      parameters: { ...parameters },
-      created_at: now,
-      updated_at: now,
-    };
+    const profile = createProfile({
+      name: profileName,
+      parameters,
+      sourceVoiceId: selectedVoiceSourceId,
+      baseVoiceId: null,
+      fallbackIndex: savedProfiles.length + 1,
+    });
 
     setSavedProfiles((current) => [profile, ...current]);
     setProfileName('');
@@ -251,19 +128,7 @@ export default function App() {
   }
 
   function duplicateProfile(profile) {
-    const now = new Date().toISOString();
-
-    const duplicatedProfile = {
-      id: crypto.randomUUID(),
-      name: `${profile.name} Copy`,
-      base_voice_id: profile.base_voice_id,
-      source_voice_id: profile.source_voice_id,
-      parameters: { ...profile.parameters },
-      created_at: now,
-      updated_at: now,
-    };
-
-    setSavedProfiles((current) => [duplicatedProfile, ...current]);
+    setSavedProfiles((current) => [duplicateProfileObject(profile), ...current]);
   }
 
   function editProfile(profile) {
@@ -271,7 +136,7 @@ export default function App() {
     setProfileName(profile.name);
     setSelectedVoiceSourceId(profile.source_voice_id || null);
     setEditingProfileId(profile.id);
-    setActiveView('profile_builder');
+    setActiveView(VIEWS.PROFILE_BUILDER);
   }
 
   function cancelEditProfile() {
@@ -305,23 +170,8 @@ export default function App() {
       return;
     }
 
-    const now = new Date().toISOString();
     const sourceType = videoFileName ? 'video' : 'audio';
-
-    const savedVoice = {
-      id: crypto.randomUUID(),
-      name: sourceFileName,
-      source_type: sourceType,
-      source_file_name: sourceFileName,
-      analysis_status: DEFAULT_ANALYSIS_STATUS,
-      analysis_traits: null,
-      estimated_parameters: null,
-      analysis_error: null,
-      base_voice_id: null,
-      parameters: null,
-      created_at: now,
-      updated_at: now,
-    };
+    const savedVoice = createSavedVoice({ sourceFileName, sourceType });
 
     setSavedVoices((current) => [savedVoice, ...current]);
   }
@@ -346,7 +196,7 @@ export default function App() {
     loadVoiceSource(voice);
     setSelectedVoiceSourceId(voice.id);
     setProfileName(`${voice.name} Profile`);
-    setActiveView('profile_builder');
+    setActiveView(VIEWS.PROFILE_BUILDER);
   }
 
   async function copyProfileVocString(profile) {
@@ -403,7 +253,7 @@ export default function App() {
       try {
         const importedProfile = JSON.parse(reader.result);
 
-        if (!isValidImportedProfile(importedProfile)) {
+        if (!validateProfile(importedProfile)) {
           setImportStatus('Invalid profile JSON: missing required fields.');
           return;
         }
@@ -642,7 +492,7 @@ export default function App() {
       </section>
 
       <section className="voc-card voc-builder-card">
-        <h2>{activeView === 'profile_builder' ? 'Profile Builder' : 'Profile Schema'}</h2>
+        <h2>{activeView === VIEWS.PROFILE_BUILDER ? 'Profile Builder' : 'Profile Schema'}</h2>
         <p>Parameters are the locked source of truth for every VOC profile.</p>
 
         <label className="voc-field">
@@ -781,9 +631,9 @@ export default function App() {
               value={profileSortMode}
               onChange={(event) => setProfileSortMode(event.target.value)}
             >
-              <option value="newest">newest</option>
-              <option value="oldest">oldest</option>
-              <option value="alphabetical">alphabetical</option>
+              <option value={SORT_MODES.NEWEST}>newest</option>
+              <option value={SORT_MODES.OLDEST}>oldest</option>
+              <option value={SORT_MODES.ALPHABETICAL}>alphabetical</option>
             </select>
           </label>
         </div>
@@ -925,9 +775,9 @@ export default function App() {
               value={voiceSortMode}
               onChange={(event) => setVoiceSortMode(event.target.value)}
             >
-              <option value="newest">newest</option>
-              <option value="oldest">oldest</option>
-              <option value="alphabetical">alphabetical</option>
+              <option value={SORT_MODES.NEWEST}>newest</option>
+              <option value={SORT_MODES.OLDEST}>oldest</option>
+              <option value={SORT_MODES.ALPHABETICAL}>alphabetical</option>
             </select>
           </label>
         </div>
