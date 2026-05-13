@@ -81,9 +81,9 @@ assert(
 // --- 3. Status function, key missing -----------------------------------------
 delete process.env.ELEVENLABS_API_KEY;
 const statusMod = await import('../netlify/functions/elevenlabs-status.js');
-const statusRes = await statusMod.handler();
-const statusBody = JSON.parse(statusRes.body);
-assert(statusRes.statusCode === 200, 'status function returns 200 even when disconnected');
+const statusRes = await statusMod.default();
+const statusBody = await statusRes.json();
+assert(statusRes.status === 200, 'status function returns 200 even when disconnected');
 assert(statusBody.connected === false, 'status reports connected:false when no API key');
 assert(
   /not configured/i.test(statusBody.reason || ''),
