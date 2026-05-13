@@ -1,0 +1,19 @@
+# Netlify configuration for VOC.
+#
+# Static frontend: built with `npm run build` → ./dist
+# Serverless functions: ./netlify/functions
+#
+# Required environment variable for real provider integration:
+#   ELEVENLABS_API_KEY — set in the Netlify site environment, never committed.
+#
+# When ELEVENLABS_API_KEY is NOT set, the functions return 503 with a
+# structured "disconnected" reason. The frontend renders the real provider
+# panel as DISCONNECTED in that state. No fake audio is generated.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"

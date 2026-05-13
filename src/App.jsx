@@ -21,7 +21,9 @@ import SavedProfilesPanel from './components/SavedProfilesPanel.jsx';
 import VoiceSourceLibrary from './components/VoiceSourceLibrary.jsx';
 import AudioGenerationPanel from './components/AudioGenerationPanel.jsx';
 import BuildStatusPanel from './components/BuildStatusPanel.jsx';
+import RealProviderPanel from './components/RealProviderPanel.jsx';
 import { useAudioGeneration } from './hooks/useAudioGeneration.js';
+import { useRealVoiceProvider } from './hooks/useRealVoiceProvider.js';
 import { useProfileBuilderState } from './hooks/useProfileBuilderState.js';
 import { useProfilesStore } from './hooks/useProfilesStore.js';
 import { useVoicesStore } from './hooks/useVoicesStore.js';
@@ -96,6 +98,7 @@ export default function App() {
   } = useProfileImportExport({ savedProfiles, setSavedProfiles });
 
   const generation = useAudioGeneration();
+  const realProvider = useRealVoiceProvider();
 
   function saveProfile() {
     const now = new Date().toISOString();
@@ -202,9 +205,15 @@ export default function App() {
         videoFileName={videoFileName}
         generation={generation}
       />
+      <RealProviderPanel
+        realProvider={realProvider}
+        parameters={parameters}
+      />
       <BuildStatusPanel
         provider={generation.provider}
         providerStatus={generation.providerStatus}
+        realProviderStatus={realProvider.status}
+        realProviderCapabilities={realProvider.capabilities}
       />
       <SavedProfilesPanel
         savedProfiles={savedProfiles}

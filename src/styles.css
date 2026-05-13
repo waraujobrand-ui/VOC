@@ -794,3 +794,55 @@ body,
     min-height: 44px;
   }
 }
+
+.voc-real-provider-state {
+  text-transform: uppercase;
+}
+
+.voc-real-provider-state-connected {
+  background: rgba(76, 194, 163, 0.18);
+  border-color: rgba(76, 194, 163, 0.4);
+  color: var(--accent);
+}
+
+.voc-real-provider-state-disconnected {
+  background: rgba(255, 122, 122, 0.16);
+  border-color: rgba(255, 122, 122, 0.36);
+  color: var(--danger);
+}
+
+.voc-real-provider-panel .voc-real-provider-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 14px 0 0;
+}
+
+.voc-real-provider-panel .voc-real-provider-clone,
+.voc-real-provider-panel .voc-real-provider-preview,
+.voc-real-provider-panel .voc-real-provider-mapping {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.voc-real-provider-panel .voc-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 10px 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.voc-real-provider-panel .voc-label input[type="text"],
+.voc-real-provider-panel .voc-label textarea {
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 14px;
+}
+
