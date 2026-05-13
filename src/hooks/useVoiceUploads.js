@@ -7,19 +7,11 @@ export function useVoiceUploads() {
   function handleAudioUpload(event) {
     const fileName = event.target.files?.[0]?.name || '';
     setAudioFileName(fileName);
-
-    if (fileName) {
-      setVideoFileName('');
-    }
   }
 
   function handleVideoUpload(event) {
     const fileName = event.target.files?.[0]?.name || '';
     setVideoFileName(fileName);
-
-    if (fileName) {
-      setAudioFileName('');
-    }
   }
 
   function loadVoiceSource(voice) {
