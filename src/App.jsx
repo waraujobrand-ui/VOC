@@ -19,6 +19,9 @@ import StatusDashboard from './components/StatusDashboard.jsx';
 import ProfileBuilder from './components/ProfileBuilder.jsx';
 import SavedProfilesPanel from './components/SavedProfilesPanel.jsx';
 import VoiceSourceLibrary from './components/VoiceSourceLibrary.jsx';
+import AudioGenerationPanel from './components/AudioGenerationPanel.jsx';
+import BuildStatusPanel from './components/BuildStatusPanel.jsx';
+import { useAudioGeneration } from './hooks/useAudioGeneration.js';
 import { useProfileBuilderState } from './hooks/useProfileBuilderState.js';
 import { useProfilesStore } from './hooks/useProfilesStore.js';
 import { useVoicesStore } from './hooks/useVoicesStore.js';
@@ -91,6 +94,8 @@ export default function App() {
     importStatus,
     importProfileJson,
   } = useProfileImportExport({ savedProfiles, setSavedProfiles });
+
+  const generation = useAudioGeneration();
 
   function saveProfile() {
     const now = new Date().toISOString();
@@ -190,6 +195,16 @@ export default function App() {
         saveProfile={saveProfile}
         editingProfileId={editingProfileId}
         cancelEditProfile={cancelEditProfile}
+      />
+      <AudioGenerationPanel
+        parameters={parameters}
+        audioFileName={audioFileName}
+        videoFileName={videoFileName}
+        generation={generation}
+      />
+      <BuildStatusPanel
+        provider={generation.provider}
+        providerStatus={generation.providerStatus}
       />
       <SavedProfilesPanel
         savedProfiles={savedProfiles}

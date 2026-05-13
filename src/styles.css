@@ -598,6 +598,136 @@ body,
   margin-top: 18px;
 }
 
+.voc-audio-panel {
+  background:
+    radial-gradient(circle at top right, rgba(76, 194, 163, 0.1), transparent 36%),
+    var(--surface);
+}
+
+.voc-audio-provider {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin: 12px 0 18px;
+}
+
+.voc-audio-note {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed var(--border-strong);
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+}
+
+.voc-audio-state {
+  text-transform: uppercase;
+}
+
+.voc-audio-state-ready {
+  background: rgba(76, 194, 163, 0.18);
+  border-color: rgba(76, 194, 163, 0.4);
+  color: var(--accent);
+}
+
+.voc-audio-state-generating {
+  background: rgba(255, 220, 120, 0.12);
+  border-color: rgba(255, 220, 120, 0.36);
+  color: #ffdc78;
+}
+
+.voc-audio-state-failed {
+  background: rgba(255, 122, 122, 0.16);
+  border-color: rgba(255, 122, 122, 0.36);
+  color: var(--danger);
+}
+
+.voc-audio-fail {
+  background: rgba(255, 122, 122, 0.1);
+  border: 1px solid rgba(255, 122, 122, 0.32);
+  border-radius: 12px;
+  color: var(--danger);
+  font-weight: 700;
+  margin: 12px 0 0;
+  padding: 12px 14px;
+}
+
+.voc-audio-result {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.voc-audio-result audio {
+  width: 100%;
+}
+
+.voc-audio-verify-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.voc-audio-signature {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.voc-audio-mapping {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.voc-audio-mapping li {
+  background: #0e1318;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.voc-audio-mapping span {
+  color: var(--muted);
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.voc-build-status-panel {
+  background:
+    radial-gradient(circle at top left, rgba(76, 194, 163, 0.16), transparent 30%),
+    var(--surface);
+}
+
+.voc-build-status-list {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.voc-build-status-list li {
+  background: rgba(11, 13, 16, 0.55);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  padding: 12px 14px;
+}
+
+.voc-build-status-list strong {
+  color: var(--accent);
+}
+
 @keyframes vocFadeConfirm {
   0% {
     opacity: 0;
