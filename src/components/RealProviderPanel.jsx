@@ -182,11 +182,27 @@ export default function RealProviderPanel({
           type="button"
           className="voc-button voc-button-primary"
           onClick={handleClone}
-          disabled={!capabilities.cloning || !selectedFile || isCloning}
+          disabled={isCloning}
           data-testid="voc-real-provider-clone-button"
         >
           {isCloning ? 'Cloning…' : 'Clone via ElevenLabs IVC'}
         </button>
+        {!capabilities.cloning ? (
+          <p
+            className="voc-audio-fail"
+            data-testid="voc-real-provider-clone-unavailable"
+          >
+            CLONE UNAVAILABLE: provider disconnected.{' '}
+            {status.reason || 'ELEVENLABS_API_KEY is not configured on the backend.'}{' '}
+            Clicking Clone will produce an explicit failure; no voice_id is
+            invented.
+          </p>
+        ) : !selectedFile ? (
+          <p className="voc-audio-note" data-testid="voc-real-provider-clone-needs-file">
+            Select an audio file above. Clicking Clone without a file will
+            produce an explicit failure.
+          </p>
+        ) : null}
         {cloneState.state === REAL_PROVIDER_STATES.FAILED ? (
           <p className="voc-audio-fail" data-testid="voc-real-provider-clone-fail">
             CLONE FAILED: {cloneState.reason}
@@ -228,11 +244,31 @@ export default function RealProviderPanel({
           type="button"
           className="voc-button voc-button-primary"
           onClick={handlePreview}
-          disabled={!capabilities.preview || !cloneReady || isPreviewing}
+          disabled={isPreviewing}
           data-testid="voc-real-provider-preview-button"
         >
           {isPreviewing ? 'Generating…' : 'Generate ElevenLabs preview'}
         </button>
+        {!capabilities.preview ? (
+          <p
+            className="voc-audio-fail"
+            data-testid="voc-real-provider-preview-unavailable"
+          >
+            PREVIEW UNAVAILABLE: provider disconnected.{' '}
+            {status.reason || 'ELEVENLABS_API_KEY is not configured on the backend.'}{' '}
+            Clicking Generate will produce an explicit failure; no fallback
+            audio is synthesized.
+          </p>
+        ) : !cloneReady ? (
+          <p
+            className="voc-audio-fail"
+            data-testid="voc-real-provider-preview-needs-voice"
+          >
+            PREVIEW UNAVAILABLE: no real provider voice_id yet. Clone a source
+            first. Clicking Generate without a voice_id will produce an
+            explicit failure.
+          </p>
+        ) : null}
         {previewState.state === REAL_PROVIDER_STATES.FAILED ? (
           <p
             className="voc-audio-fail"
@@ -252,7 +288,6 @@ export default function RealProviderPanel({
               type="button"
               className="voc-button voc-button-secondary"
               onClick={handleExport}
-              disabled={!capabilities.export}
               data-testid="voc-real-provider-export-button"
             >
               Export real provider preview
@@ -264,7 +299,17 @@ export default function RealProviderPanel({
               audio you just played; it is not synthesized again on export.
             </p>
           </div>
-        ) : null}
+        ) : (
+          <p
+            className="voc-audio-fail"
+            data-testid="voc-real-provider-export-unavailable"
+          >
+            EXPORT UNAVAILABLE: no real provider preview blob exists yet.
+            Export of the real provider path becomes available only after a
+            successful ElevenLabs preview. The local deterministic engine is
+            never substituted here.
+          </p>
+        )}
       </div>
 
       <div className="voc-real-provider-mapping">
