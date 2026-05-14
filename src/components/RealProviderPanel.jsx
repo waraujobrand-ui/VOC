@@ -2,13 +2,20 @@ import { useRef, useState } from 'react';
 
 import { REAL_PROVIDER_STATES } from '../hooks/useRealVoiceProvider.js';
 import { mapVocToElevenLabsRequest } from '../audio/elevenLabsParameterMapping.js';
+import { RECORDER_STATES, useVoiceRecorder } from '../hooks/useVoiceRecorder.js';
 
 const CAPABILITY_LABELS = {
   connected: 'Provider connected',
-  cloning: 'Cloning (upload → real voice_id)',
+  cloning: 'Cloning (recording or upload → real voice_id)',
   analysis: 'Voice analysis → VOC parameters',
   preview: 'Real provider preview (TTS)',
   export: 'Export real provider preview',
+};
+
+const SOURCE_KIND = {
+  NONE: 'none',
+  RECORDED: 'recorded',
+  UPLOADED: 'uploaded',
 };
 
 function CapabilityRow({ label, value, detail }) {
@@ -21,6 +28,25 @@ function CapabilityRow({ label, value, detail }) {
       </strong>
     </div>
   );
+}
+
+function recorderStatusLabel(state) {
+  switch (state) {
+    case RECORDER_STATES.IDLE:
+      return 'IDLE';
+    case RECORDER_STATES.REQUESTING:
+      return 'REQUESTING MICROPHONE…';
+    case RECORDER_STATES.RECORDING:
+      return 'RECORDING…';
+    case RECORDER_STATES.STOPPED:
+      return 'RECORDING READY';
+    case RECORDER_STATES.FAILED:
+      return 'RECORDING FAILED';
+    case RECORDER_STATES.UNSUPPORTED:
+      return 'RECORDING UNSUPPORTED';
+    default:
+      return state;
+  }
 }
 
 export default function RealProviderPanel({
@@ -40,8 +66,11 @@ export default function RealProviderPanel({
     reset,
   } = realProvider;
 
+  const recorder = useVoiceRecorder();
+
   const fileInputRef = useRef(null);
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [activeSource, setActiveSource] = useState(SOURCE_KIND.NONE);
   const [previewText, setPreviewText] = useState(
     previewTextProp || 'This is a VOC real provider preview.',
   );
@@ -50,14 +79,61 @@ export default function RealProviderPanel({
 
   const mapping = mapVocToElevenLabsRequest(parameters);
 
+  function adoptRecorded() {
+    setActiveSource(SOURCE_KIND.RECORDED);
+  }
+
   function handleFile(event) {
     const file = event.target.files?.[0] || null;
-    setSelectedFile(file);
+    setUploadedFile(file);
+    if (file) {
+      setActiveSource(SOURCE_KIND.UPLOADED);
+    } else if (activeSource === SOURCE_KIND.UPLOADED) {
+      setActiveSource(
+        recorder.blob ? SOURCE_KIND.RECORDED : SOURCE_KIND.NONE,
+      );
+    }
+  }
+
+  async function handleStartRecording() {
+    setExportInfo('');
+    await recorder.start();
+  }
+
+  function handleStopRecording() {
+    const r = recorder.stop();
+    if (r && r.ok) {
+      // The recorder will transition to STOPPED in its onstop handler; mark
+      // the recorded sample as active source immediately so the UI reflects
+      // the intent. The blob/url update right after.
+      adoptRecorded();
+    }
+  }
+
+  function handleDiscardRecording() {
+    recorder.reset();
+    if (activeSource === SOURCE_KIND.RECORDED) {
+      setActiveSource(uploadedFile ? SOURCE_KIND.UPLOADED : SOURCE_KIND.NONE);
+    }
+  }
+
+  function getActiveCloneFile() {
+    if (activeSource === SOURCE_KIND.RECORDED && recorder.blob) {
+      return recorder.asFile('voc-recording');
+    }
+    if (activeSource === SOURCE_KIND.UPLOADED && uploadedFile) {
+      return uploadedFile;
+    }
+    // Fall back: if exactly one is set, use it.
+    if (recorder.blob && !uploadedFile) return recorder.asFile('voc-recording');
+    if (uploadedFile && !recorder.blob) return uploadedFile;
+    return null;
   }
 
   async function handleClone() {
     setExportInfo('');
-    await cloneFromFile({ file: selectedFile, name: voiceName });
+    const file = getActiveCloneFile();
+    await cloneFromFile({ file, name: voiceName });
   }
 
   async function handlePreview() {
@@ -75,6 +151,40 @@ export default function RealProviderPanel({
   const previewReady = previewState.state === REAL_PROVIDER_STATES.READY;
   const cloneReady = cloneState.state === REAL_PROVIDER_STATES.READY;
 
+  const isRecording = recorder.state === RECORDER_STATES.RECORDING;
+  const isRequestingMic = recorder.state === RECORDER_STATES.REQUESTING;
+  const recordingReady =
+    recorder.state === RECORDER_STATES.STOPPED && !!recorder.blob;
+  const recordingFailed = recorder.state === RECORDER_STATES.FAILED;
+  const recordingUnsupported = recorder.state === RECORDER_STATES.UNSUPPORTED;
+
+  const effectiveActiveSource =
+    activeSource !== SOURCE_KIND.NONE
+      ? activeSource
+      : recordingReady
+      ? SOURCE_KIND.RECORDED
+      : uploadedFile
+      ? SOURCE_KIND.UPLOADED
+      : SOURCE_KIND.NONE;
+
+  const activeSourceLabel =
+    effectiveActiveSource === SOURCE_KIND.RECORDED
+      ? 'Recorded voice sample'
+      : effectiveActiveSource === SOURCE_KIND.UPLOADED
+      ? 'Uploaded audio file'
+      : 'No clone source selected yet';
+
+  const activeSourceDetail = (() => {
+    if (effectiveActiveSource === SOURCE_KIND.RECORDED && recorder.blob) {
+      const seconds = Math.round((recorder.durationMs || 0) / 100) / 10;
+      return `${recorder.mimeType || recorder.blob.type || 'audio/webm'} · ${recorder.fileName} · ${seconds}s · ${recorder.blob.size} bytes`;
+    }
+    if (effectiveActiveSource === SOURCE_KIND.UPLOADED && uploadedFile) {
+      return `${uploadedFile.type || 'audio/*'} · ${uploadedFile.name} · ${uploadedFile.size} bytes`;
+    }
+    return 'Record a voice sample (primary) or upload an audio file (secondary).';
+  })();
+
   return (
     <section
       id="real-provider-controls"
@@ -86,11 +196,12 @@ export default function RealProviderPanel({
           <span className="voc-card-subtitle">Real Provider Truth</span>
           <h2>ElevenLabs Voice Identity</h2>
           <p>
-            Real provider path. Cloning calls ElevenLabs Instant Voice Cloning
-            (IVC); preview calls ElevenLabs Text-to-Speech. No local fallback
-            audio is ever substituted on this path. If the backend reports the
-            provider is disconnected (no ELEVENLABS_API_KEY configured), all
-            real-provider actions explicitly fail.
+            Record your voice (primary) or upload an audio file (secondary),
+            then clone via ElevenLabs Instant Voice Cloning (IVC). Preview
+            calls ElevenLabs Text-to-Speech. No local fallback audio is ever
+            substituted on this path. If the backend reports the provider is
+            disconnected (no ELEVENLABS_API_KEY configured), all real-provider
+            actions explicitly fail.
           </p>
         </div>
         <span
@@ -119,7 +230,7 @@ export default function RealProviderPanel({
         <CapabilityRow
           label={CAPABILITY_LABELS.analysis}
           value={capabilities.analysis}
-          detail="not implemented — uploads are not analyzed into VOC parameters"
+          detail="not implemented — uploads/recordings are not analyzed into VOC parameters"
         />
         <CapabilityRow
           label={CAPABILITY_LABELS.preview}
@@ -161,17 +272,117 @@ export default function RealProviderPanel({
         </button>
       </div>
 
-      <div className="voc-real-provider-clone">
-        <h3>1. Clone source → real voice_id</h3>
-        <label className="voc-label">
-          Voice name
-          <input
-            type="text"
-            value={voiceName}
-            onChange={(e) => setVoiceName(e.target.value)}
-            data-testid="voc-real-provider-voice-name"
-          />
-        </label>
+      <div
+        className="voc-real-provider-record voc-real-provider-record-primary"
+        data-testid="voc-real-provider-record-section"
+      >
+        <h3>1. Record voice sample (primary)</h3>
+        <p className="voc-audio-note">
+          Tap Record voice sample. Your browser will ask for microphone
+          permission. We recommend 15–60 seconds of clear, natural speech.
+          The recorded sample becomes the active clone source.
+        </p>
+
+        <div
+          className="voc-recorder-status"
+          data-testid="voc-recorder-status"
+          data-state={recorder.state}
+        >
+          <span>Recorder status</span>
+          <strong>{recorderStatusLabel(recorder.state)}</strong>
+        </div>
+
+        {recordingUnsupported ? (
+          <p
+            className="voc-audio-fail"
+            data-testid="voc-recorder-unsupported"
+          >
+            RECORDING UNSUPPORTED: this browser does not expose
+            navigator.mediaDevices.getUserMedia or MediaRecorder. Use a
+            recent version of Chrome, Edge, Firefox, or Safari, or upload an
+            audio file in the secondary section below.
+          </p>
+        ) : null}
+
+        {recordingFailed ? (
+          <p
+            className="voc-audio-fail"
+            data-testid="voc-recorder-failed"
+          >
+            RECORDING FAILED: {recorder.error || 'microphone permission denied or recorder error.'}
+          </p>
+        ) : null}
+
+        <div
+          className="voc-real-provider-record-controls"
+          data-testid="voc-real-provider-record-controls"
+        >
+          <button
+            type="button"
+            className="voc-button voc-button-primary"
+            onClick={handleStartRecording}
+            disabled={isRecording || isRequestingMic || recordingUnsupported}
+            data-testid="voc-real-provider-record-start"
+          >
+            {isRequestingMic
+              ? 'Requesting microphone…'
+              : isRecording
+              ? 'Recording…'
+              : recordingReady
+              ? 'Record again'
+              : 'Record voice sample'}
+          </button>
+          <button
+            type="button"
+            className="voc-button voc-button-secondary"
+            onClick={handleStopRecording}
+            disabled={!isRecording}
+            data-testid="voc-real-provider-record-stop"
+          >
+            Stop recording
+          </button>
+          {recordingReady ? (
+            <button
+              type="button"
+              className="voc-button voc-button-secondary"
+              onClick={handleDiscardRecording}
+              data-testid="voc-real-provider-record-discard"
+            >
+              Discard recording
+            </button>
+          ) : null}
+        </div>
+
+        {recordingReady && recorder.url ? (
+          <div
+            className="voc-real-provider-record-preview"
+            data-testid="voc-real-provider-record-preview"
+          >
+            <audio
+              controls
+              src={recorder.url}
+              data-testid="voc-real-provider-record-audio"
+            />
+            <p className="voc-audio-note">
+              Recorded sample · MIME{' '}
+              <strong data-testid="voc-real-provider-record-mime">
+                {recorder.mimeType || (recorder.blob && recorder.blob.type) || 'audio/webm'}
+              </strong>{' '}
+              · filename{' '}
+              <strong data-testid="voc-real-provider-record-filename">
+                {recorder.fileName}
+              </strong>
+              .
+            </p>
+          </div>
+        ) : null}
+      </div>
+
+      <div
+        className="voc-real-provider-upload voc-real-provider-upload-secondary"
+        data-testid="voc-real-provider-upload-section"
+      >
+        <h3>2. Or upload an audio file (secondary)</h3>
         <label className="voc-label">
           Audio file (sent directly to ElevenLabs IVC)
           <input
@@ -180,6 +391,39 @@ export default function RealProviderPanel({
             accept="audio/*"
             onChange={handleFile}
             data-testid="voc-real-provider-audio-input"
+          />
+        </label>
+      </div>
+
+      <div
+        className="voc-real-provider-source-truth"
+        data-testid="voc-real-provider-source-truth"
+        data-active-source={effectiveActiveSource}
+      >
+        <h3>Active clone source</h3>
+        <div className="voc-status-item">
+          <span>Active clone source</span>
+          <strong data-testid="voc-real-provider-active-source-label">
+            {activeSourceLabel}
+          </strong>
+        </div>
+        <p
+          className="voc-audio-note"
+          data-testid="voc-real-provider-active-source-detail"
+        >
+          {activeSourceDetail}
+        </p>
+      </div>
+
+      <div className="voc-real-provider-clone">
+        <h3>3. Clone source → real voice_id</h3>
+        <label className="voc-label">
+          Voice name
+          <input
+            type="text"
+            value={voiceName}
+            onChange={(e) => setVoiceName(e.target.value)}
+            data-testid="voc-real-provider-voice-name"
           />
         </label>
         <button
@@ -201,10 +445,14 @@ export default function RealProviderPanel({
             Clicking Clone will produce an explicit failure; no voice_id is
             invented.
           </p>
-        ) : !selectedFile ? (
-          <p className="voc-audio-note" data-testid="voc-real-provider-clone-needs-file">
-            Select an audio file above. Clicking Clone without a file will
-            produce an explicit failure.
+        ) : effectiveActiveSource === SOURCE_KIND.NONE ? (
+          <p
+            className="voc-audio-note"
+            data-testid="voc-real-provider-clone-needs-source"
+          >
+            No active clone source yet. Record a voice sample above (primary)
+            or upload an audio file (secondary). Clicking Clone without a
+            source will produce an explicit failure.
           </p>
         ) : null}
         {cloneState.state === REAL_PROVIDER_STATES.FAILED ? (
@@ -234,7 +482,7 @@ export default function RealProviderPanel({
       </div>
 
       <div className="voc-real-provider-preview">
-        <h3>2. Real provider preview (TTS)</h3>
+        <h3>4. Real provider preview (TTS)</h3>
         <label className="voc-label">
           Preview text
           <textarea
