@@ -174,6 +174,10 @@ export default function App() {
         realProviderStatus={realProvider.status}
         realProviderCapabilities={realProvider.capabilities}
       />
+      <RealProviderPanel
+        realProvider={realProvider}
+        parameters={parameters}
+      />
       <InvestorHero />
       <DemoOverviewPanel />
       <IdentityLockPanel />
@@ -213,10 +217,6 @@ export default function App() {
         audioFileName={audioFileName}
         videoFileName={videoFileName}
         generation={generation}
-      />
-      <RealProviderPanel
-        realProvider={realProvider}
-        parameters={parameters}
       />
       <BuildStatusPanel
         provider={generation.provider}

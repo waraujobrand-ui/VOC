@@ -58,6 +58,13 @@ export default function AppHeader({ realProviderStatus, realProviderCapabilities
           {audioBadge}
         </span>
       </div>
+      <a
+        href="#real-provider-controls"
+        className="voc-header-jump-link"
+        data-testid="voc-header-jump-real-provider"
+      >
+        Jump to real provider controls →
+      </a>
     </header>
   );
 }

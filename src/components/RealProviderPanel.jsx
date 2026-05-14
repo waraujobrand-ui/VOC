@@ -76,7 +76,11 @@ export default function RealProviderPanel({
   const cloneReady = cloneState.state === REAL_PROVIDER_STATES.READY;
 
   return (
-    <section className="voc-card voc-real-provider-panel">
+    <section
+      id="real-provider-controls"
+      className="voc-card voc-real-provider-panel"
+      data-testid="voc-real-provider-panel"
+    >
       <div className="voc-card-heading-row">
         <div>
           <span className="voc-card-subtitle">Real Provider Truth</span>

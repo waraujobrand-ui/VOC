@@ -846,3 +846,39 @@ body,
   font-size: 14px;
 }
 
+.voc-real-provider-panel .voc-label input[type="file"] {
+  width: 100%;
+  color: var(--text);
+  font-size: 14px;
+  padding: 8px 0;
+}
+
+.voc-header-jump-link {
+  display: inline-block;
+  margin-top: 14px;
+  background: var(--accent);
+  color: #06120e;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 800;
+  font-size: 14px;
+  text-decoration: none;
+  box-shadow: 0 10px 30px rgba(76, 194, 163, 0.18);
+}
+
+.voc-header-jump-link:hover {
+  filter: brightness(1.05);
+}
+
+@media (max-width: 640px) {
+  .voc-header-jump-link {
+    display: block;
+    text-align: center;
+    width: 100%;
+  }
+
+  .voc-real-provider-panel .voc-real-provider-actions .voc-button {
+    width: 100%;
+  }
+}
+
