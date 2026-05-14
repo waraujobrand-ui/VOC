@@ -85,14 +85,22 @@ async function runScenario({ name, connected, reason }) {
     const containerHtml = await page.locator('#root').innerHTML();
     const viewport = page.viewportSize();
 
+    const demoAudio = (await page.locator('[data-testid="voc-demo-audio-badge"]').textContent()).trim();
+    const limitsAudio = (await page.locator('[data-testid="voc-limits-audio-badge"]').textContent()).trim();
+
     if (connected) {
       assert(audio === 'Audio generation connected', `[${name}] audio badge = "Audio generation connected" (got: "${audio}")`);
       assert(!containerHtml.includes('No audio generation connected'), `[${name}] mobile DOM must NOT contain "No audio generation connected"`);
+      assert(!containerHtml.includes('Audio generation not connected'), `[${name}] mobile DOM must NOT contain "Audio generation not connected"`);
       assert(clone === 'Voice cloning connected', `[${name}] clone badge = "Voice cloning connected" (got: "${clone}")`);
       assert(analysis === 'Analysis unavailable', `[${name}] analysis badge = "Analysis unavailable" (got: "${analysis}")`);
+      assert(demoAudio === 'Audio generation provider connected', `[${name}] DemoModePanel audio badge truth (got: "${demoAudio}")`);
+      assert(limitsAudio === 'Audio generation provider connected', `[${name}] CurrentLimitsPanel audio badge truth (got: "${limitsAudio}")`);
     } else {
       assert(audio === 'No audio generation connected', `[${name}] audio badge = "No audio generation connected" (got: "${audio}")`);
       assert(clone === 'Manual parameters only', `[${name}] clone badge = "Manual parameters only" (got: "${clone}")`);
+      assert(demoAudio === 'Audio generation not connected', `[${name}] DemoModePanel audio badge disconnected truth (got: "${demoAudio}")`);
+      assert(limitsAudio === 'Audio generation not connected', `[${name}] CurrentLimitsPanel audio badge disconnected truth (got: "${limitsAudio}")`);
     }
     assert(viewport.width <= 414, `[${name}] mobile viewport width <=414 (got ${viewport.width}x${viewport.height})`);
   } finally {
@@ -112,6 +120,8 @@ const jsName = assets.find((f) => f.startsWith('index-') && f.endsWith('.js'));
 const bundle = readFileSync(new URL(`../dist/assets/${jsName}`, import.meta.url), 'utf8');
 assert(bundle.includes('Audio generation connected'), 'built bundle contains "Audio generation connected"');
 assert(bundle.includes('No audio generation connected'), 'built bundle contains "No audio generation connected"');
+assert(bundle.includes('Audio generation provider connected'), 'built bundle contains "Audio generation provider connected"');
+assert(bundle.includes('Audio generation not connected'), 'built bundle contains "Audio generation not connected"');
 
 console.log('');
 if (failures === 0) {

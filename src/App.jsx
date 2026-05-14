@@ -181,8 +181,14 @@ export default function App() {
       <IdentityConsistencyPanel />
       <WhyItMattersPanel />
       <DemoWalkthroughPanel />
-      <DemoModePanel />
-      <CurrentLimitsPanel />
+      <DemoModePanel
+        realProviderStatus={realProvider.status}
+        realProviderCapabilities={realProvider.capabilities}
+      />
+      <CurrentLimitsPanel
+        realProviderStatus={realProvider.status}
+        realProviderCapabilities={realProvider.capabilities}
+      />
       <FutureEnginePipelinePanel />
       <FutureSystemArchitecturePanel />
       <DevInvestorClarityPanel />
