@@ -1,4 +1,31 @@
-export default function AppHeader() {
+export default function AppHeader({ realProviderStatus, realProviderCapabilities }) {
+  const checked = !!(realProviderStatus && realProviderStatus.checked);
+  const connected = !!(realProviderStatus && realProviderStatus.connected);
+  const caps = realProviderCapabilities || {
+    connected: false,
+    cloning: false,
+    analysis: false,
+    preview: false,
+    export: false,
+  };
+
+  let audioBadge;
+  if (!checked) {
+    audioBadge = 'Audio generation status checking…';
+  } else if (connected && caps.preview) {
+    audioBadge = 'Audio generation connected';
+  } else {
+    audioBadge = 'No audio generation connected';
+  }
+
+  const analysisBadge = caps.analysis
+    ? 'Voice analysis available'
+    : 'Analysis unavailable';
+
+  const cloneBadge = checked && connected && caps.cloning
+    ? 'Voice cloning connected'
+    : 'Manual parameters only';
+
   return (
     <header className="voc-header">
       <div className="voc-brand">
@@ -12,9 +39,24 @@ export default function AppHeader() {
         <span className="voc-version">v0.1-alpha</span>
       </div>
       <div className="voc-badge-row">
-        <span className="voc-badge">Analysis unavailable</span>
-        <span className="voc-badge">Manual parameters only</span>
-        <span className="voc-badge">No audio generation connected</span>
+        <span
+          className="voc-badge"
+          data-testid="voc-header-analysis-badge"
+        >
+          {analysisBadge}
+        </span>
+        <span
+          className="voc-badge"
+          data-testid="voc-header-clone-badge"
+        >
+          {cloneBadge}
+        </span>
+        <span
+          className="voc-badge"
+          data-testid="voc-header-audio-badge"
+        >
+          {audioBadge}
+        </span>
       </div>
     </header>
   );

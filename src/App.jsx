@@ -170,7 +170,10 @@ export default function App() {
 
   return (
     <main className="voc-app">
-      <AppHeader />
+      <AppHeader
+        realProviderStatus={realProvider.status}
+        realProviderCapabilities={realProvider.capabilities}
+      />
       <InvestorHero />
       <DemoOverviewPanel />
       <IdentityLockPanel />

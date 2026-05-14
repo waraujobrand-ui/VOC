@@ -148,6 +148,56 @@ assert(
   'adapter does not synthesize or fabricate audio',
 );
 
+// --- 5b. AppHeader renders truth, not a hardcoded badge ---------------------
+const headerSrc = readFileSync(
+  new URL('../src/components/AppHeader.jsx', import.meta.url),
+  'utf8',
+);
+assert(
+  /realProviderStatus/.test(headerSrc) && /realProviderCapabilities/.test(headerSrc),
+  'AppHeader consumes realProviderStatus + realProviderCapabilities props',
+);
+assert(
+  /Audio generation connected/.test(headerSrc),
+  'AppHeader emits "Audio generation connected" copy when connected',
+);
+assert(
+  /No audio generation connected/.test(headerSrc),
+  'AppHeader still emits "No audio generation connected" copy in disconnected branch',
+);
+assert(
+  /connected && caps\.preview/.test(headerSrc),
+  'AppHeader gates connected badge on real provider status + preview capability',
+);
+assert(
+  !/'No audio generation connected'\s*\)\s*;?\s*$/m.test(headerSrc.split('return')[0] || ''),
+  'AppHeader does not unconditionally hardcode disconnected text',
+);
+
+// AppHeader is wired with real provider props in App.jsx
+const appSrc = readFileSync(
+  new URL('../src/App.jsx', import.meta.url),
+  'utf8',
+);
+assert(
+  /<AppHeader[\s\S]*?realProviderStatus=\{realProvider\.status\}[\s\S]*?realProviderCapabilities=\{realProvider\.capabilities\}[\s\S]*?\/>/.test(appSrc),
+  'App.jsx passes realProvider status + capabilities into AppHeader',
+);
+
+// Bundle ships both connected + disconnected copy so the live truth can swap
+assert(
+  bundle.includes('Audio generation connected'),
+  'bundle contains plain text: "Audio generation connected"',
+);
+assert(
+  bundle.includes('No audio generation connected'),
+  'bundle contains plain text: "No audio generation connected"',
+);
+assert(
+  bundle.includes('Voice cloning connected'),
+  'bundle contains plain text: "Voice cloning connected"',
+);
+
 // --- 6. BuildStatusPanel disconnected truth ---------------------------------
 const buildPanelSrc = readFileSync(
   new URL('../src/components/BuildStatusPanel.jsx', import.meta.url),
