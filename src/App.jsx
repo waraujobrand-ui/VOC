@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { VIEWS } from './constants.js';
 import { createProfile } from './schema.js';
 import AppHeader from './components/AppHeader.jsx';
+import VocEntry from './components/VocEntry.jsx';
 import InvestorHero from './components/InvestorHero.jsx';
 import DemoOverviewPanel from './components/DemoOverviewPanel.jsx';
 import IdentityLockPanel from './components/IdentityLockPanel.jsx';
@@ -34,7 +35,23 @@ import {
 } from './hooks/useSearchSort.js';
 import { useProfileImportExport } from './hooks/useProfileImportExport.js';
 
+/**
+ * Top-level app stages.
+ *
+ *   entry   → first-load screen, single CTA
+ *   tools   → full tool interface (RealProviderPanel + everything else)
+ *
+ * Investor / demo / architecture panels are only rendered in tools stage
+ * and collapsed into an "advanced" section via a disclosure.
+ */
+const APP_STAGE = {
+  ENTRY: 'entry',
+  TOOLS: 'tools',
+};
+
 export default function App() {
+  const [appStage, setAppStage] = useState(APP_STAGE.ENTRY);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [activeView, setActiveView] = useState(VIEWS.PROFILE_BUILDER);
 
   const {
@@ -168,40 +185,43 @@ export default function App() {
     setActiveView(VIEWS.PROFILE_BUILDER);
   }
 
+  const providerConnected = !!(
+    realProvider.status &&
+    realProvider.status.checked &&
+    realProvider.status.connected
+  );
+
+  // ── Entry stage ──────────────────────────────────────────────────────────
+  if (appStage === APP_STAGE.ENTRY) {
+    return (
+      <main className="voc-app voc-app--entry">
+        <AppHeader
+          realProviderStatus={realProvider.status}
+          realProviderCapabilities={realProvider.capabilities}
+          minimal
+        />
+        <VocEntry
+          onStart={() => setAppStage(APP_STAGE.TOOLS)}
+          providerConnected={providerConnected}
+        />
+      </main>
+    );
+  }
+
+  // ── Tools stage ───────────────────────────────────────────────────────────
   return (
     <main className="voc-app">
       <AppHeader
         realProviderStatus={realProvider.status}
         realProviderCapabilities={realProvider.capabilities}
       />
+
+      {/* Primary tool — recording + clone */}
       <RealProviderPanel
         realProvider={realProvider}
         parameters={parameters}
       />
-      <InvestorHero />
-      <DemoOverviewPanel />
-      <IdentityLockPanel />
-      <VoiceOwnershipPanel />
-      <IdentityConsistencyPanel />
-      <WhyItMattersPanel />
-      <DemoWalkthroughPanel />
-      <DemoModePanel
-        realProviderStatus={realProvider.status}
-        realProviderCapabilities={realProvider.capabilities}
-      />
-      <CurrentLimitsPanel
-        realProviderStatus={realProvider.status}
-        realProviderCapabilities={realProvider.capabilities}
-      />
-      <FutureEnginePipelinePanel />
-      <FutureSystemArchitecturePanel />
-      <DevInvestorClarityPanel />
-      <StatusDashboard
-        savedProfiles={savedProfiles}
-        savedVoices={savedVoices}
-        audioFileName={audioFileName}
-        videoFileName={videoFileName}
-      />
+
       <ProfileBuilder
         activeView={activeView}
         profileName={profileName}
@@ -212,18 +232,21 @@ export default function App() {
         editingProfileId={editingProfileId}
         cancelEditProfile={cancelEditProfile}
       />
+
       <AudioGenerationPanel
         parameters={parameters}
         audioFileName={audioFileName}
         videoFileName={videoFileName}
         generation={generation}
       />
+
       <BuildStatusPanel
         provider={generation.provider}
         providerStatus={generation.providerStatus}
         realProviderStatus={realProvider.status}
         realProviderCapabilities={realProvider.capabilities}
       />
+
       <SavedProfilesPanel
         savedProfiles={savedProfiles}
         filteredProfiles={filteredProfiles}
@@ -244,6 +267,7 @@ export default function App() {
         copyProfileVocString={copyProfileVocString}
         copiedProfileId={copiedProfileId}
       />
+
       <VoiceSourceLibrary
         audioFileName={audioFileName}
         videoFileName={videoFileName}
@@ -260,6 +284,51 @@ export default function App() {
         deleteVoiceSource={deleteVoiceSource}
         createProfileFromSource={createProfileFromSource}
       />
+
+      {/* Advanced / investor panels — collapsed by default */}
+      <div className="voc-advanced-section" data-testid="voc-advanced-section">
+        <button
+          type="button"
+          className="voc-advanced-toggle"
+          onClick={() => setShowAdvanced((v) => !v)}
+          data-testid="voc-advanced-toggle"
+          aria-expanded={showAdvanced}
+        >
+          {showAdvanced ? 'Hide' : 'Show'} advanced info
+          <span className="voc-advanced-toggle-caret" aria-hidden="true">
+            {showAdvanced ? ' ▲' : ' ▼'}
+          </span>
+        </button>
+
+        {showAdvanced && (
+          <div className="voc-advanced-panels">
+            <StatusDashboard
+              savedProfiles={savedProfiles}
+              savedVoices={savedVoices}
+              audioFileName={audioFileName}
+              videoFileName={videoFileName}
+            />
+            <InvestorHero />
+            <DemoOverviewPanel />
+            <IdentityLockPanel />
+            <VoiceOwnershipPanel />
+            <IdentityConsistencyPanel />
+            <WhyItMattersPanel />
+            <DemoWalkthroughPanel />
+            <DemoModePanel
+              realProviderStatus={realProvider.status}
+              realProviderCapabilities={realProvider.capabilities}
+            />
+            <CurrentLimitsPanel
+              realProviderStatus={realProvider.status}
+              realProviderCapabilities={realProvider.capabilities}
+            />
+            <FutureEnginePipelinePanel />
+            <FutureSystemArchitecturePanel />
+            <DevInvestorClarityPanel />
+          </div>
+        )}
+      </div>
     </main>
   );
 }

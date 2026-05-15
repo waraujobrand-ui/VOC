@@ -1,4 +1,18 @@
-export default function AppHeader({ realProviderStatus, realProviderCapabilities }) {
+/**
+ * AppHeader
+ *
+ * minimal=true  → just the logo/wordmark. No capability badges.
+ *                  Used on the entry screen so first-time users don't see
+ *                  system status before they've done anything.
+ *
+ * minimal=false (default) → full header with a quiet single status line
+ *                  replacing the old three noisy capability badges.
+ */
+export default function AppHeader({
+  realProviderStatus,
+  realProviderCapabilities,
+  minimal = false,
+}) {
   const checked = !!(realProviderStatus && realProviderStatus.checked);
   const connected = !!(realProviderStatus && realProviderStatus.connected);
   const caps = realProviderCapabilities || {
@@ -9,22 +23,17 @@ export default function AppHeader({ realProviderStatus, realProviderCapabilities
     export: false,
   };
 
-  let audioBadge;
+  // Single quiet status: one dot, one phrase. No architecture detail.
+  let statusLabel;
   if (!checked) {
-    audioBadge = 'Audio generation status checking…';
+    statusLabel = null; // still checking — show nothing
   } else if (connected && caps.preview) {
-    audioBadge = 'Audio generation connected';
+    statusLabel = 'Voice service ready';
+  } else if (connected) {
+    statusLabel = 'Voice service connected';
   } else {
-    audioBadge = 'No audio generation connected';
+    statusLabel = 'Voice service not configured';
   }
-
-  const analysisBadge = caps.analysis
-    ? 'Voice analysis available'
-    : 'Analysis unavailable';
-
-  const cloneBadge = checked && connected && caps.cloning
-    ? 'Voice cloning connected'
-    : 'Manual parameters only';
 
   return (
     <header className="voc-header">
@@ -38,33 +47,22 @@ export default function AppHeader({ realProviderStatus, realProviderCapabilities
         </div>
         <span className="voc-version">v0.1-alpha</span>
       </div>
-      <div className="voc-badge-row">
-        <span
-          className="voc-badge"
-          data-testid="voc-header-analysis-badge"
-        >
-          {analysisBadge}
-        </span>
-        <span
-          className="voc-badge"
-          data-testid="voc-header-clone-badge"
-        >
-          {cloneBadge}
-        </span>
-        <span
-          className="voc-badge"
-          data-testid="voc-header-audio-badge"
-        >
-          {audioBadge}
-        </span>
-      </div>
-      <a
-        href="#real-provider-controls"
-        className="voc-header-jump-link"
-        data-testid="voc-header-jump-real-provider"
-      >
-        Jump to real provider controls →
-      </a>
+
+      {/* Only show status line when NOT in minimal mode */}
+      {!minimal && statusLabel && (
+        <div className="voc-header-status-row">
+          <span
+            className={`voc-header-status-dot ${connected ? 'voc-header-status-dot--on' : 'voc-header-status-dot--off'}`}
+            aria-hidden="true"
+          />
+          <span
+            className="voc-header-status-label"
+            data-testid="voc-header-status-label"
+          >
+            {statusLabel}
+          </span>
+        </div>
+      )}
     </header>
   );
 }

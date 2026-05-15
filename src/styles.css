@@ -744,6 +744,363 @@ body,
   }
 }
 
+/* ── Entry screen ──────────────────────────────────────────────────────────── */
+
+.voc-app--entry {
+  min-height: 100dvh;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 48px 24px;
+  gap: 0;
+}
+
+.voc-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  max-width: 520px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.voc-entry-logo {
+  align-items: center;
+  background: linear-gradient(135deg, var(--accent), #8ce6cf);
+  border-radius: 20px;
+  color: #06120e;
+  display: flex;
+  font-weight: 900;
+  font-size: 22px;
+  box-shadow: 0 0 48px rgba(76, 194, 163, 0.3);
+  height: 72px;
+  justify-content: center;
+  letter-spacing: -0.08em;
+  width: 72px;
+  margin-bottom: 28px;
+}
+
+.voc-entry-headline {
+  font-size: clamp(36px, 8vw, 58px);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin: 0 0 16px;
+  color: var(--text);
+}
+
+.voc-entry-sub {
+  font-size: clamp(16px, 2.5vw, 19px);
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 0 0 36px;
+  max-width: 400px;
+}
+
+.voc-entry-cta {
+  background: var(--accent);
+  border: none;
+  border-radius: 999px;
+  box-shadow: 0 14px 40px rgba(76, 194, 163, 0.28);
+  color: #06120e;
+  cursor: pointer;
+  font-size: 19px;
+  font-weight: 800;
+  padding: 18px 40px;
+  transition: transform 140ms ease, filter 140ms ease, box-shadow 140ms ease;
+  width: 100%;
+  max-width: 340px;
+}
+
+.voc-entry-cta:hover {
+  filter: brightness(1.06);
+  transform: translateY(-2px);
+  box-shadow: 0 20px 48px rgba(76, 194, 163, 0.34);
+}
+
+.voc-entry-cta:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.voc-entry-secondary {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 16px 0 32px;
+}
+
+.voc-entry-link {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: inherit;
+  font-weight: 700;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.voc-entry-link:hover {
+  filter: brightness(1.1);
+}
+
+.voc-entry-provider-dot-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.voc-entry-provider-dot {
+  border-radius: 999px;
+  display: inline-block;
+  height: 8px;
+  width: 8px;
+  flex-shrink: 0;
+}
+
+.voc-entry-provider-dot--connected {
+  background: var(--accent);
+  box-shadow: 0 0 6px rgba(76, 194, 163, 0.6);
+}
+
+.voc-entry-provider-dot--off {
+  background: var(--muted);
+  opacity: 0.5;
+}
+
+.voc-entry-provider-dot-label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ── Header status (minimal single-line) ────────────────────────────────────── */
+
+.voc-header-status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.voc-header-status-dot {
+  border-radius: 999px;
+  display: inline-block;
+  height: 8px;
+  width: 8px;
+  flex-shrink: 0;
+}
+
+.voc-header-status-dot--on {
+  background: var(--accent);
+  box-shadow: 0 0 6px rgba(76, 194, 163, 0.5);
+}
+
+.voc-header-status-dot--off {
+  background: var(--muted);
+  opacity: 0.5;
+}
+
+.voc-header-status-label {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ── Recording confirmation ─────────────────────────────────────────────────── */
+
+.voc-confirm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 28px 0 20px;
+  text-align: center;
+}
+
+.voc-confirm-check {
+  align-items: center;
+  background: rgba(76, 194, 163, 0.15);
+  border: 2px solid rgba(76, 194, 163, 0.4);
+  border-radius: 999px;
+  color: var(--accent);
+  display: flex;
+  font-size: 24px;
+  font-weight: 900;
+  height: 56px;
+  justify-content: center;
+  margin-bottom: 16px;
+  width: 56px;
+}
+
+.voc-confirm-headline {
+  color: var(--text);
+  font-size: clamp(22px, 4vw, 30px);
+  letter-spacing: -0.02em;
+  margin: 0 0 6px;
+}
+
+.voc-confirm-duration {
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin: 0 0 20px;
+  text-transform: uppercase;
+}
+
+.voc-confirm-player {
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.voc-confirm-player audio {
+  width: 100%;
+  border-radius: 12px;
+}
+
+.voc-confirm-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.voc-confirm-use {
+  font-size: 16px;
+  padding: 14px 24px;
+}
+
+/* ── Post-confirm summary bar ───────────────────────────────────────────────── */
+
+.voc-confirm-summary {
+  align-items: center;
+  background: rgba(76, 194, 163, 0.06);
+  border: 1px solid rgba(76, 194, 163, 0.22);
+  border-radius: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px 14px;
+}
+
+.voc-confirm-summary-check {
+  color: var(--accent);
+  font-weight: 900;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.voc-confirm-summary-label {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.voc-confirm-summary-audio {
+  width: 100%;
+  margin-top: 8px;
+  border-radius: 8px;
+}
+
+/* ── Record main button ─────────────────────────────────────────────────────── */
+
+.voc-record-main-btn {
+  font-size: 16px;
+  padding: 14px 28px;
+  width: 100%;
+}
+
+/* ── Upload toggle button ───────────────────────────────────────────────────── */
+
+.voc-upload-toggle {
+  background: none;
+  border: 1px dashed var(--border-strong);
+  border-radius: 10px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 16px;
+  text-align: left;
+  transition: border-color 140ms ease, color 140ms ease;
+  width: 100%;
+}
+
+.voc-upload-toggle:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+/* ── Provider details toggle ────────────────────────────────────────────────── */
+
+.voc-provider-details-toggle-row {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+.voc-provider-details {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ── Advanced section (investor/demo panels) ────────────────────────────────── */
+
+.voc-advanced-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.voc-advanced-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 10px 16px;
+  text-align: center;
+  transition: border-color 140ms ease, color 140ms ease;
+  width: 100%;
+}
+
+.voc-advanced-toggle:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.voc-advanced-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+@media (max-width: 640px) {
+  .voc-app--entry {
+    padding: 36px 20px;
+  }
+
+  .voc-entry-headline {
+    font-size: 42px;
+  }
+
+  .voc-confirm-actions {
+    width: 100%;
+  }
+
+  .voc-confirm-actions .voc-button {
+    width: 100%;
+  }
+}
+
 @media (max-width: 640px) {
   .voc-app {
     gap: 22px;
@@ -970,6 +1327,11 @@ body,
 
   .voc-real-provider-record-primary {
     padding: 14px 12px;
+  }
+
+  .voc-record-main-btn {
+    font-size: 15px;
+    padding: 16px 20px;
   }
 }
 
