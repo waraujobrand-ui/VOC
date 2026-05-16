@@ -2,8 +2,56 @@ import { useRef, useState } from 'react';
 
 import { REAL_PROVIDER_STATES } from '../hooks/useRealVoiceProvider.js';
 import { mapVocToElevenLabsRequest } from '../audio/elevenLabsParameterMapping.js';
-import { RECORDER_STATES, useVoiceRecorder } from '../hooks/useVoiceRecorder.js';
+import {
+  RECORDER_FAIL_KIND,
+  RECORDER_STATES,
+  useVoiceRecorder,
+} from '../hooks/useVoiceRecorder.js';
 import RecordingConfirmation from './RecordingConfirmation.jsx';
+
+const RECORDER_RECOVERY_COPY = {
+  [RECORDER_FAIL_KIND.PERMISSION_DENIED]: {
+    title: 'Microphone access was blocked',
+    body:
+      'Your browser or operating system blocked microphone access for this site. ' +
+      'Open the site permissions in your browser (or System Settings → Privacy → Microphone on macOS / iOS), ' +
+      'allow microphone access for this site, then tap Try again.',
+  },
+  [RECORDER_FAIL_KIND.NO_MICROPHONE]: {
+    title: 'No microphone detected',
+    body:
+      'We couldn’t find a microphone on this device. Connect or enable one, then tap Try again. ' +
+      'If you have a headset or external mic, make sure it’s plugged in and selected as the input device.',
+  },
+  [RECORDER_FAIL_KIND.MIC_IN_USE]: {
+    title: 'Microphone is unavailable',
+    body:
+      'Another app or browser tab may be using your microphone right now. ' +
+      'Close other apps that might be holding it (video calls, voice memos, other tabs), then tap Try again.',
+  },
+  [RECORDER_FAIL_KIND.UNSUPPORTED]: {
+    title: 'This browser can’t record audio',
+    body:
+      'Microphone recording isn’t supported here. Try the latest Chrome, Safari, or Edge over HTTPS, ' +
+      'or upload an audio file below instead.',
+  },
+  [RECORDER_FAIL_KIND.EMPTY_RECORDING]: {
+    title: 'Recording was empty',
+    body:
+      'No audio was captured. Check that your microphone isn’t muted, speak closer to it, then tap Try again.',
+  },
+  [RECORDER_FAIL_KIND.GENERIC]: {
+    title: 'Recording failed',
+    body:
+      'Something went wrong while recording. Tap Try again — if it keeps failing, reload the page or upload an audio file below.',
+  },
+};
+
+function getRecoveryCopy(failKind) {
+  return (
+    RECORDER_RECOVERY_COPY[failKind] || RECORDER_RECOVERY_COPY[RECORDER_FAIL_KIND.GENERIC]
+  );
+}
 
 // ── Internal constants ────────────────────────────────────────────────────────
 
@@ -257,18 +305,71 @@ export default function RealProviderPanel({
               </p>
             )}
 
-            {/* Error states */}
-            {recordingUnsupported && (
-              <p className="voc-audio-fail" data-testid="voc-recorder-unsupported">
-                Recording not supported in this browser. Upload an audio file
-                below instead.
-              </p>
-            )}
-            {recordingFailed && (
-              <p className="voc-audio-fail" data-testid="voc-recorder-failed">
-                {recorder.error || 'Microphone permission denied.'}
-              </p>
-            )}
+            {/* Error states — human-friendly recovery copy with retry path */}
+            {recordingUnsupported && (() => {
+              const copy = getRecoveryCopy(
+                recorder.failKind || RECORDER_FAIL_KIND.UNSUPPORTED,
+              );
+              return (
+                <div
+                  className="voc-recorder-recovery"
+                  data-testid="voc-recorder-unsupported"
+                  data-fail-kind={recorder.failKind || RECORDER_FAIL_KIND.UNSUPPORTED}
+                  role="status"
+                >
+                  <strong className="voc-recorder-recovery-title">{copy.title}</strong>
+                  <p className="voc-recorder-recovery-body">{copy.body}</p>
+                  {recorder.error && (
+                    <p
+                      className="voc-recorder-recovery-detail"
+                      data-testid="voc-recorder-recovery-detail"
+                    >
+                      Technical detail: {recorder.error}
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
+            {recordingFailed && (() => {
+              const copy = getRecoveryCopy(recorder.failKind);
+              return (
+                <div
+                  className="voc-recorder-recovery"
+                  data-testid="voc-recorder-failed"
+                  data-fail-kind={recorder.failKind || RECORDER_FAIL_KIND.GENERIC}
+                  role="alert"
+                >
+                  <strong className="voc-recorder-recovery-title">{copy.title}</strong>
+                  <p className="voc-recorder-recovery-body">{copy.body}</p>
+                  {recorder.error && (
+                    <p
+                      className="voc-recorder-recovery-detail"
+                      data-testid="voc-recorder-recovery-detail"
+                    >
+                      Technical detail: {recorder.error}
+                    </p>
+                  )}
+                  <div className="voc-recorder-recovery-actions">
+                    <button
+                      type="button"
+                      className="voc-button voc-button-primary"
+                      onClick={handleStartRecording}
+                      data-testid="voc-recorder-retry"
+                    >
+                      Try again
+                    </button>
+                    <button
+                      type="button"
+                      className="voc-entry-link"
+                      onClick={handleRetryRecording}
+                      data-testid="voc-recorder-reset"
+                    >
+                      Reset
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Confirmed recording summary (quiet — action is Clone below) */}
             {confirmState === CONFIRM_STATE.CONFIRMED && recordingReady && (

@@ -32,6 +32,65 @@ export const RECORDER_STATES = {
   UNSUPPORTED: 'unsupported',
 };
 
+// Failure categories used by the UI to render human-friendly recovery copy.
+// These are derived from getUserMedia / MediaRecorder error names. The raw
+// technical reason is preserved on the hook as `error` for diagnostics.
+export const RECORDER_FAIL_KIND = {
+  PERMISSION_DENIED: 'permission_denied',
+  NO_MICROPHONE: 'no_microphone',
+  MIC_IN_USE: 'mic_in_use',
+  UNSUPPORTED: 'unsupported',
+  EMPTY_RECORDING: 'empty_recording',
+  GENERIC: 'generic',
+};
+
+// Map a getUserMedia / MediaRecorder error to a coarse failure category.
+// We intentionally keep this string-based rather than instanceof to survive
+// non-standard error shapes (some browsers report DOMException by name only).
+function classifyMediaError(err) {
+  const name = (err && err.name) || '';
+  const message = ((err && err.message) || '').toLowerCase();
+  if (
+    name === 'NotAllowedError' ||
+    name === 'SecurityError' ||
+    name === 'PermissionDeniedError' ||
+    message.includes('permission') ||
+    message.includes('denied') ||
+    message.includes('not allowed')
+  ) {
+    return RECORDER_FAIL_KIND.PERMISSION_DENIED;
+  }
+  if (
+    name === 'NotFoundError' ||
+    name === 'DevicesNotFoundError' ||
+    message.includes('no device') ||
+    message.includes('not found') ||
+    message.includes('no microphone') ||
+    message.includes('no audio')
+  ) {
+    return RECORDER_FAIL_KIND.NO_MICROPHONE;
+  }
+  if (
+    name === 'NotReadableError' ||
+    name === 'TrackStartError' ||
+    name === 'AbortError' ||
+    message.includes('in use') ||
+    message.includes('busy') ||
+    message.includes('could not start') ||
+    message.includes('hardware')
+  ) {
+    return RECORDER_FAIL_KIND.MIC_IN_USE;
+  }
+  if (
+    name === 'OverconstrainedError' ||
+    name === 'ConstraintNotSatisfiedError' ||
+    name === 'TypeError'
+  ) {
+    return RECORDER_FAIL_KIND.NO_MICROPHONE;
+  }
+  return RECORDER_FAIL_KIND.GENERIC;
+}
+
 function detectSupport() {
   if (typeof window === 'undefined') return false;
   if (!window.MediaRecorder) return false;
@@ -75,6 +134,7 @@ export function useVoiceRecorder() {
   const [supported, setSupported] = useState(true);
   const [state, setState] = useState(RECORDER_STATES.IDLE);
   const [error, setError] = useState('');
+  const [failKind, setFailKind] = useState('');
   const [blob, setBlob] = useState(null);
   const [url, setUrl] = useState('');
   const [mimeType, setMimeType] = useState('');
@@ -92,6 +152,7 @@ export function useVoiceRecorder() {
     setSupported(ok);
     if (!ok) {
       setState(RECORDER_STATES.UNSUPPORTED);
+      setFailKind(RECORDER_FAIL_KIND.UNSUPPORTED);
       setError(
         'This browser cannot record audio. MediaRecorder or getUserMedia is unavailable.',
       );
@@ -125,13 +186,15 @@ export function useVoiceRecorder() {
     if (!detectSupport()) {
       setSupported(false);
       setState(RECORDER_STATES.UNSUPPORTED);
+      setFailKind(RECORDER_FAIL_KIND.UNSUPPORTED);
       setError(
         'This browser cannot record audio. MediaRecorder or getUserMedia is unavailable.',
       );
-      return { ok: false, reason: 'unsupported' };
+      return { ok: false, reason: 'unsupported', kind: RECORDER_FAIL_KIND.UNSUPPORTED };
     }
     clearPreviousBlob();
     setError('');
+    setFailKind('');
     setState(RECORDER_STATES.REQUESTING);
     let stream;
     try {
@@ -140,9 +203,11 @@ export function useVoiceRecorder() {
       const reason = err && (err.message || err.name)
         ? `${err.name || 'Error'}: ${err.message || ''}`.trim()
         : 'Microphone permission denied or unavailable.';
+      const kind = classifyMediaError(err);
       setState(RECORDER_STATES.FAILED);
+      setFailKind(kind);
       setError(reason);
-      return { ok: false, reason };
+      return { ok: false, reason, kind };
     }
     streamRef.current = stream;
     const chosenMime = pickMimeType();
@@ -155,9 +220,12 @@ export function useVoiceRecorder() {
       stream.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
       const reason = err && err.message ? err.message : 'MediaRecorder construction failed.';
+      // MediaRecorder construction failures usually indicate the browser
+      // doesn't support a usable audio MIME type — surface as unsupported.
       setState(RECORDER_STATES.FAILED);
+      setFailKind(RECORDER_FAIL_KIND.UNSUPPORTED);
       setError(reason);
-      return { ok: false, reason };
+      return { ok: false, reason, kind: RECORDER_FAIL_KIND.UNSUPPORTED };
     }
     chunksRef.current = [];
     recorder.ondataavailable = (event) => {
@@ -166,10 +234,10 @@ export function useVoiceRecorder() {
       }
     };
     recorder.onerror = (event) => {
-      const reason =
-        (event && event.error && event.error.message) ||
-        'Recorder error.';
+      const err = event && event.error;
+      const reason = (err && err.message) || 'Recorder error.';
       setState(RECORDER_STATES.FAILED);
+      setFailKind(classifyMediaError(err));
       setError(reason);
     };
     recorder.onstop = () => {
@@ -183,6 +251,7 @@ export function useVoiceRecorder() {
         }
         if (!finalBlob || finalBlob.size === 0) {
           setState(RECORDER_STATES.FAILED);
+          setFailKind(RECORDER_FAIL_KIND.EMPTY_RECORDING);
           setError('Recording produced no audio data.');
           return;
         }
@@ -199,6 +268,7 @@ export function useVoiceRecorder() {
       } catch (err) {
         const reason = err && err.message ? err.message : 'Failed to finalize recording.';
         setState(RECORDER_STATES.FAILED);
+        setFailKind(RECORDER_FAIL_KIND.GENERIC);
         setError(reason);
       }
     };
@@ -213,9 +283,11 @@ export function useVoiceRecorder() {
       stream.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
       const reason = err && err.message ? err.message : 'Recorder failed to start.';
+      const kind = classifyMediaError(err);
       setState(RECORDER_STATES.FAILED);
+      setFailKind(kind);
       setError(reason);
-      return { ok: false, reason };
+      return { ok: false, reason, kind };
     }
   }, [clearPreviousBlob]);
 
@@ -230,8 +302,9 @@ export function useVoiceRecorder() {
     } catch (err) {
       const reason = err && err.message ? err.message : 'Recorder failed to stop.';
       setState(RECORDER_STATES.FAILED);
+      setFailKind(RECORDER_FAIL_KIND.GENERIC);
       setError(reason);
-      return { ok: false, reason };
+      return { ok: false, reason, kind: RECORDER_FAIL_KIND.GENERIC };
     }
   }, []);
 
@@ -246,8 +319,10 @@ export function useVoiceRecorder() {
     clearPreviousBlob();
     setError('');
     setMimeType('');
+    const supportedNow = detectSupport();
+    setFailKind(supportedNow ? '' : RECORDER_FAIL_KIND.UNSUPPORTED);
     setState(
-      detectSupport() ? RECORDER_STATES.IDLE : RECORDER_STATES.UNSUPPORTED,
+      supportedNow ? RECORDER_STATES.IDLE : RECORDER_STATES.UNSUPPORTED,
     );
   }, [clearPreviousBlob]);
 
@@ -277,6 +352,7 @@ export function useVoiceRecorder() {
     state,
     supported,
     error,
+    failKind,
     blob,
     url,
     mimeType,

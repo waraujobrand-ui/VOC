@@ -1302,6 +1302,61 @@ body,
   margin-top: 10px;
 }
 
+.voc-recorder-recovery {
+  background: rgba(255, 122, 122, 0.08);
+  border: 1px solid rgba(255, 122, 122, 0.32);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.voc-recorder-recovery[data-fail-kind="unsupported"],
+.voc-recorder-recovery[data-fail-kind="no_microphone"],
+.voc-recorder-recovery[data-fail-kind="mic_in_use"] {
+  background: rgba(255, 186, 96, 0.08);
+  border-color: rgba(255, 186, 96, 0.34);
+}
+
+.voc-recorder-recovery-title {
+  color: var(--danger);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.01em;
+}
+
+.voc-recorder-recovery[data-fail-kind="unsupported"] .voc-recorder-recovery-title,
+.voc-recorder-recovery[data-fail-kind="no_microphone"] .voc-recorder-recovery-title,
+.voc-recorder-recovery[data-fail-kind="mic_in_use"] .voc-recorder-recovery-title {
+  color: #d98a2b;
+}
+
+.voc-recorder-recovery-body {
+  color: var(--text);
+  font-size: 13.5px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.voc-recorder-recovery-detail {
+  color: var(--muted);
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  margin: 0;
+  opacity: 0.85;
+  word-break: break-word;
+}
+
+.voc-recorder-recovery-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
 .voc-real-provider-source-truth h3 {
   margin-bottom: 8px;
 }
